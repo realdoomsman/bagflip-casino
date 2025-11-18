@@ -151,10 +151,56 @@ export default function Home() {
           >
             ← Back to Home
           </button>
-          {selectedGame === 'flip' && <CoinFlip />}
-          {selectedGame === 'dice' && <DiceGame />}
-          {selectedGame === 'evenodd' && <EvenOdd />}
-          {selectedGame === 'pvp' && <PvPLobby />}
+          
+          {!selectedGame ? (
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-5xl font-black text-center mb-12 text-text-primary">
+                Choose Your Game
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <GameCard
+                  title="COIN FLIP"
+                  subtitle="50/50 pure luck"
+                  icon="🪙"
+                  buttonText="PLAY FLIP"
+                  color="text-neon-green"
+                  onClick={() => setSelectedGame('flip')}
+                />
+                <GameCard
+                  title="DICE"
+                  subtitle="Roll 1-100. Pick High or Low."
+                  icon="🎲"
+                  buttonText="PLAY DICE"
+                  color="text-neon-blue"
+                  onClick={() => setSelectedGame('dice')}
+                />
+                <GameCard
+                  title="EVEN/ODD"
+                  subtitle="Odd or Even. Simple."
+                  icon="🔢"
+                  buttonText="PLAY NOW"
+                  color="text-neon-purple"
+                  onClick={() => setSelectedGame('evenodd')}
+                />
+              </div>
+              
+              <div className="text-center">
+                <button
+                  onClick={() => setSelectedGame('pvp')}
+                  className="px-12 py-6 text-2xl font-black bg-neon-purple text-dark-bg rounded-xl hover:scale-105 transition"
+                >
+                  🤝 PVP MODE
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {selectedGame === 'flip' && <CoinFlip />}
+              {selectedGame === 'dice' && <DiceGame />}
+              {selectedGame === 'evenodd' && <EvenOdd />}
+              {selectedGame === 'pvp' && <PvPLobby />}
+            </>
+          )}
         </div>
       )}
     </main>
