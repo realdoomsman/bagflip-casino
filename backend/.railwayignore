@@ -1,0 +1,6 @@
+../programs
+../target
+../.anchor
+*.rs
+Cargo.toml
+Cargo.lock
