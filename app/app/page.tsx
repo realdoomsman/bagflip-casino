@@ -77,7 +77,14 @@ export default function Home() {
                 icon="🪙"
                 buttonText="PLAY FLIP"
                 color="text-neon-green"
-                onClick={() => { setShowGameHub(true); setSelectedGame('flip'); }}
+                onClick={() => { 
+                  if (!connected) {
+                    alert('Please connect your wallet first!');
+                    return;
+                  }
+                  setShowGameHub(true); 
+                  setSelectedGame('flip'); 
+                }}
               />
               <GameCard
                 title="DICE"
@@ -85,7 +92,14 @@ export default function Home() {
                 icon="🎲"
                 buttonText="PLAY DICE"
                 color="text-neon-blue"
-                onClick={() => { setShowGameHub(true); setSelectedGame('dice'); }}
+                onClick={() => { 
+                  if (!connected) {
+                    alert('Please connect your wallet first!');
+                    return;
+                  }
+                  setShowGameHub(true); 
+                  setSelectedGame('dice'); 
+                }}
               />
               <GameCard
                 title="EVEN/ODD"
@@ -93,7 +107,14 @@ export default function Home() {
                 icon="🔢"
                 buttonText="PLAY NOW"
                 color="text-neon-purple"
-                onClick={() => { setShowGameHub(true); setSelectedGame('evenodd'); }}
+                onClick={() => { 
+                  if (!connected) {
+                    alert('Please connect your wallet first!');
+                    return;
+                  }
+                  setShowGameHub(true); 
+                  setSelectedGame('evenodd'); 
+                }}
               />
             </div>
           </div>
