@@ -131,9 +131,6 @@ export default function PvPLobby() {
         const result = await response.json()
         console.log('Join result:', result)
         
-        // Update database via join
-        db.joinPvPRoom(roomId, publicKey.toString())
-        
         // Show result modal
         setShowResult({
           won: result.won,
