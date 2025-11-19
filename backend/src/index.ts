@@ -146,18 +146,8 @@ settlementEngine.on('live_feed', (data: any) => {
   })
 })
 
-// WebSocket for live updates
-const wss = new WebSocketServer({ port: 8080 })
-
-wss.on('connection', (ws) => {
-  console.log('Client connected')
-  
-  ws.on('message', (message) => {
-    console.log('Received:', message.toString())
-  })
-  
-  ws.send(JSON.stringify({ type: 'connected' }))
-})
+// WebSocket will be attached to HTTP server after it starts
+let wss: WebSocketServer
 
 // Broadcast to all clients
 function broadcast(data: any) {
@@ -591,7 +581,20 @@ app.post('/api/game/request-vrf', rateLimit(10, 60000), async (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`)
-  console.log(`WebSocket running on port 8080`)
+  console.log(`WebSocket running on same port ${PORT}`)
+})
+
+// Attach WebSocket to the same HTTP server
+wss = new WebSocketServer({ server })
+
+wss.on('connection', (ws) => {
+  console.log('Client connected')
+  
+  ws.on('message', (message) => {
+    console.log('Received:', message.toString())
+  })
+  
+  ws.send(JSON.stringify({ type: 'connected' }))
 })
