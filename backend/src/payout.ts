@@ -13,6 +13,9 @@ import path from 'path'
 export class PayoutService {
   private connection: Connection
   private treasuryKeypair: Keypair | null = null
+  private cachedBalance: number = 0
+  private lastBalanceCheck: number = 0
+  private BALANCE_CACHE_MS = 30000 // Cache for 30 seconds
 
   constructor(rpcUrl: string) {
     this.connection = new Connection(rpcUrl, 'confirmed')
@@ -101,12 +104,21 @@ export class PayoutService {
       return 0
     }
 
+    // Return cached balance if recent
+    const now = Date.now()
+    if (now - this.lastBalanceCheck < this.BALANCE_CACHE_MS) {
+      return this.cachedBalance
+    }
+
     try {
       const balance = await this.connection.getBalance(this.treasuryKeypair.publicKey)
-      return balance / LAMPORTS_PER_SOL
+      this.cachedBalance = balance / LAMPORTS_PER_SOL
+      this.lastBalanceCheck = now
+      return this.cachedBalance
     } catch (error) {
       console.error('[PAYOUT] Error getting treasury balance:', error)
-      return 0
+      // Return cached balance if available, otherwise 0
+      return this.cachedBalance
     }
   }
 
