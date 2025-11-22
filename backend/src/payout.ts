@@ -23,10 +23,19 @@ export class PayoutService {
     try {
       // Try environment variable first (for production/Railway)
       if (process.env.TREASURY_KEYPAIR) {
-        const keypairData = JSON.parse(process.env.TREASURY_KEYPAIR)
-        this.treasuryKeypair = Keypair.fromSecretKey(new Uint8Array(keypairData))
-        console.log('[PAYOUT] Treasury wallet loaded from env:', this.treasuryKeypair.publicKey.toString())
-        return
+        try {
+          // Try base64 format first
+          const keypairData = Buffer.from(process.env.TREASURY_KEYPAIR, 'base64')
+          this.treasuryKeypair = Keypair.fromSecretKey(keypairData)
+          console.log('[PAYOUT] Treasury wallet loaded from env (base64):', this.treasuryKeypair.publicKey.toString())
+          return
+        } catch (e) {
+          // Try JSON array format
+          const keypairData = JSON.parse(process.env.TREASURY_KEYPAIR)
+          this.treasuryKeypair = Keypair.fromSecretKey(new Uint8Array(keypairData))
+          console.log('[PAYOUT] Treasury wallet loaded from env (json):', this.treasuryKeypair.publicKey.toString())
+          return
+        }
       }
       
       // Fall back to file (for local development)
