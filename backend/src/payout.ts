@@ -21,10 +21,19 @@ export class PayoutService {
 
   private loadTreasuryKeypair() {
     try {
+      // Try environment variable first (for production/Railway)
+      if (process.env.TREASURY_KEYPAIR) {
+        const keypairData = JSON.parse(process.env.TREASURY_KEYPAIR)
+        this.treasuryKeypair = Keypair.fromSecretKey(new Uint8Array(keypairData))
+        console.log('[PAYOUT] Treasury wallet loaded from env:', this.treasuryKeypair.publicKey.toString())
+        return
+      }
+      
+      // Fall back to file (for local development)
       const keypairPath = path.join(__dirname, '../treasury-keypair.json')
       const keypairData = JSON.parse(fs.readFileSync(keypairPath, 'utf-8'))
       this.treasuryKeypair = Keypair.fromSecretKey(new Uint8Array(keypairData))
-      console.log('[PAYOUT] Treasury wallet loaded:', this.treasuryKeypair.publicKey.toString())
+      console.log('[PAYOUT] Treasury wallet loaded from file:', this.treasuryKeypair.publicKey.toString())
     } catch (error) {
       console.error('[PAYOUT] Failed to load treasury keypair:', error)
     }
