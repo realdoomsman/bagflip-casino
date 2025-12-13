@@ -82,55 +82,34 @@ export default function LiveFeed({ limit = 20 }: { limit?: number }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-black text-neon-blue">
-          LIVE FEED
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse"></div>
-          <span className="text-xs text-gray-400 font-bold">LIVE</span>
-        </div>
-      </div>
-      
-      <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+      <div className="space-y-2 max-h-[450px] overflow-y-auto custom-scrollbar">
         <AnimatePresence mode="popLayout">
           {events.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">👀</div>
-              <div>Waiting for games...</div>
+            <div className="text-center py-6 text-text-secondary">
+              <div className="text-xs">No recent activity</div>
             </div>
           ) : (
             events.map((event) => (
               <motion.div
                 key={event.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="glass-panel p-3 rounded-lg hover:bg-white/5 transition-colors border-l-2"
-                style={{ borderLeftColor: event.won ? '#00ff9d' : '#ef4444' }}
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5"
               >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-text-secondary font-mono">
+                    {event.player.slice(0, 4)}...{event.player.slice(-4)}
+                  </span>
+                  <span className="text-xs text-text-secondary">{getTimeAgo(event.timestamp)}</span>
+                </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-400 font-mono">
-                        {event.player.slice(0, 4)}...{event.player.slice(-4)}
-                      </span>
-                      <span className={`text-xs font-bold ${event.won ? 'text-neon-green' : 'text-red-500'}`}>
-                        {event.won ? 'WON' : 'LOST'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">
-                        {formatWager(event.wager)} $FLIP
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {event.game}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {getTimeAgo(event.timestamp)}
-                  </div>
+                  <span className="text-xs text-white">{formatWager(event.wager)} SOL</span>
+                  <span
+                    className={`text-xs font-medium ${event.won ? 'text-green-500' : 'text-red-500'}`}
+                  >
+                    {event.won ? 'Won' : 'Lost'}
+                  </span>
                 </div>
               </motion.div>
             ))

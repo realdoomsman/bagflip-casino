@@ -11,34 +11,71 @@ interface GameCardProps {
   onClick: () => void
 }
 
-export default function GameCard({ title, subtitle, icon, buttonText, color, onClick }: GameCardProps) {
+const iconMap: Record<string, React.ReactNode> = {
+  coin: (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 6v12M9 9h6M9 15h6" />
+    </svg>
+  ),
+  dice: (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="8" r="1.5" fill="currentColor" />
+      <circle cx="8" cy="16" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="16" r="1.5" fill="currentColor" />
+    </svg>
+  ),
+  numbers: (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <path d="M8 8v8M12 8v8M16 8v8" />
+    </svg>
+  ),
+}
+
+export default function GameCard({
+  title,
+  subtitle,
+  icon,
+  buttonText,
+  color,
+  onClick,
+}: GameCardProps) {
+  const IconComponent = iconMap[icon] || iconMap.coin
+
   return (
     <motion.div
-      whileHover={{ y: -6 }}
-      whileTap={{ scale: 0.98 }}
-      className="glass-panel rounded-2xl p-8 cursor-pointer border border-white/10 hover:border-white/20 transition-all"
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.99 }}
+      className="rounded-2xl p-6 cursor-pointer bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all duration-300"
       onClick={onClick}
     >
       {/* Icon */}
-      <div className="text-7xl mb-4">
-        {icon}
+      <div
+        className={`w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center mb-5 ${color}`}
+      >
+        {IconComponent}
       </div>
 
       {/* Title */}
-      <h3 className={`text-3xl font-black mb-3 ${color}`}>
-        {title}
-      </h3>
+      <h3 className="text-lg font-semibold mb-1.5 text-white">{title}</h3>
 
       {/* Subtitle */}
-      <p className="text-gray-400 text-base mb-6">
-        {subtitle}
-      </p>
+      <p className="text-text-secondary text-sm mb-6">{subtitle}</p>
+
+      {/* Odds indicator */}
+      <div className="flex items-center gap-2 mb-5">
+        <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+          <div className="w-1/2 h-full bg-neon-green/60 rounded-full" />
+        </div>
+        <span className="text-xs text-text-secondary">50% odds</span>
+      </div>
 
       {/* Button */}
-      <button
-        className={`w-full py-3 text-lg font-bold rounded-lg border-2 ${color} hover:bg-white/5 transition-colors`}
-      >
-        {buttonText} →
+      <button className="w-full py-2.5 text-sm font-medium rounded-xl bg-white text-black hover:bg-white/90 transition-all duration-300">
+        {buttonText}
       </button>
     </motion.div>
   )

@@ -6,10 +6,14 @@ import LiveFeed from '../LiveFeed'
 
 function LiveFeedPanel() {
   return (
-    <div className="glass-panel rounded-3xl p-6 sticky top-8 max-h-[600px] overflow-y-auto">
-      <h3 className="text-2xl font-black mb-6 text-neon-blue neon-glow">
-        Live Feed
-      </h3>
+    <div className="rounded-2xl p-5 sticky top-24 bg-white/[0.02] border border-white/5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-white">Recent Activity</h3>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span className="text-xs text-text-secondary">Live</span>
+        </div>
+      </div>
       <LiveFeed />
     </div>
   )
@@ -27,54 +31,38 @@ interface GameLayoutProps {
   children: ReactNode
 }
 
-export default function GameLayout({ 
-  title, 
-  wager, 
-  setWager, 
-  onPlay, 
-  disabled, 
-  balance = 0, 
+export default function GameLayout({
+  title,
+  wager,
+  setWager,
+  onPlay,
+  disabled,
+  balance = 0,
   mode: externalMode,
   onModeChange,
-  children 
+  children,
 }: GameLayoutProps) {
   const [internalMode, setInternalMode] = useState<'treasury' | 'pvp'>('treasury')
   const mode = externalMode ?? internalMode
-  
-  const [treasuryBalance, setTreasuryBalance] = useState(0)
-  const [houseStats, setHouseStats] = useState({
-    wins: 0,
-    losses: 0,
-    winRate: 0
-  })
 
-  // Fetch real treasury stats
+  const [treasuryBalance, setTreasuryBalance] = useState(0)
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
         const response = await fetch(backendUrl + '/api/stats')
         const data = await response.json()
-        
-        // Parse treasury size (remove commas and convert)
         const treasuryStr = data.treasurySize.replace(/[^0-9.]/g, '')
-        const treasury = parseFloat(treasuryStr) || 0
-        setTreasuryBalance(treasury)
-        
-        setHouseStats({
-          wins: data.houseWins || 0,
-          losses: data.houseLosses || 0,
-          winRate: parseFloat(data.houseWinRate) || 0
-        })
+        setTreasuryBalance(parseFloat(treasuryStr) || 0)
       } catch (error) {
         console.error('Error fetching treasury stats:', error)
       }
     }
-    
     fetchStats()
     const interval = setInterval(fetchStats, 10000)
     return () => clearInterval(interval)
-  })
+  }, [])
 
   const handleModeChange = (newMode: 'treasury' | 'pvp') => {
     if (onModeChange) {
@@ -84,84 +72,73 @@ export default function GameLayout({
     }
   }
 
-  const adjustWager = (percent: number) => {
-    const current = parseFloat(wager) || 0
-    const newAmount = current * (1 + percent / 100)
-    setWager(Math.floor(newAmount).toString())
-  }
-
   const setMax = () => {
     setWager(balance.toString())
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
-      {/* Left Panel - Wager Box (Desktop) / Bottom Drawer (Mobile) */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto">
+      {/* Left Panel - Wager Box */}
       <div className="lg:col-span-3 order-3 lg:order-1">
-        <div className="glass-panel rounded-3xl p-6 lg:sticky lg:top-8 fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto z-50 lg:z-auto max-h-[80vh] lg:max-h-none overflow-y-auto">
-          <h3 className="text-2xl font-black mb-6 text-neon-green neon-glow">
-            Place Wager
-          </h3>
+        <div className="rounded-2xl p-5 lg:sticky lg:top-24 fixed lg:relative bottom-0 left-0 right-0 lg:bottom-auto z-50 lg:z-auto max-h-[80vh] lg:max-h-none overflow-y-auto bg-white/[0.02] border border-white/5">
+          <h3 className="text-sm font-semibold mb-4 text-white">Place Wager</h3>
 
           {/* Wager Input */}
           <div className="mb-4">
-            <label className="block text-sm text-text-secondary mb-2">Amount (SOL)</label>
+            <label className="block text-xs text-text-secondary mb-1.5">Amount (SOL)</label>
             <input
               type="number"
               value={wager}
               onChange={(e) => setWager(e.target.value)}
-              placeholder="0"
-              className="w-full px-4 py-4 bg-dark-panel border-2 border-neon-green/30 focus:border-neon-green outline-none text-2xl font-bold rounded-xl transition"
+              placeholder="0.00"
+              className="w-full px-3 py-3 bg-white/[0.03] border border-white/10 focus:border-white/20 outline-none text-xl font-semibold rounded-xl transition"
             />
           </div>
 
-          {/* Stepper Buttons */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <button
-              onClick={() => adjustWager(-10)}
-              className="py-2 glass-panel rounded-lg hover:bg-white/10 transition font-bold"
-            >
-              -10%
-            </button>
-            <button
-              onClick={() => adjustWager(10)}
-              className="py-2 glass-panel rounded-lg hover:bg-white/10 transition font-bold"
-            >
-              +10%
-            </button>
-            <button
-              onClick={setMax}
-              className="py-2 glass-panel rounded-lg hover:bg-white/10 transition font-bold text-neon-green"
-            >
-              MAX
-            </button>
+          {/* Quick amounts */}
+          <div className="grid grid-cols-4 gap-1.5 mb-4">
+            {[0.1, 0.5, 1, 5].map((amount) => (
+              <button
+                key={amount}
+                onClick={() => setWager(amount.toString())}
+                className="py-2 text-xs font-medium rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition"
+              >
+                {amount}
+              </button>
+            ))}
           </div>
 
           {/* Balance */}
-          <div className="text-sm text-text-secondary mb-6">
-            Your Balance: <span className="text-neon-green font-bold">{balance.toLocaleString()} SOL</span>
+          <div className="flex items-center justify-between text-sm mb-5 pb-5 border-b border-white/5">
+            <span className="text-text-secondary">Balance</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-white">{balance.toFixed(4)} SOL</span>
+              <button onClick={setMax} className="text-xs text-neon-green hover:underline">
+                Max
+              </button>
+            </div>
           </div>
 
           {/* Mode Selector */}
-          <div className="mb-6">
-            <label className="block text-sm text-text-secondary mb-2">Game Mode</label>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="mb-5">
+            <label className="block text-xs text-text-secondary mb-1.5">Mode</label>
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={() => handleModeChange('treasury')}
-                className={`py-3 rounded-xl font-bold transition ${
+                className={`py-2.5 rounded-lg text-sm font-medium transition ${
                   mode === 'treasury'
-                    ? 'bg-neon-green text-dark-bg'
-                    : 'glass-panel hover:bg-white/10'
+                    ? 'bg-white text-black'
+                    : 'bg-white/[0.03] border border-white/5 hover:bg-white/[0.06]'
                 }`}
               >
                 Treasury
               </button>
               <button
                 onClick={() => handleModeChange('pvp')}
-                className={`py-3 rounded-xl font-bold transition ${
+                className={`py-2.5 rounded-lg text-sm font-medium transition ${
                   mode === 'pvp'
-                    ? 'bg-neon-blue text-dark-bg'
-                    : 'glass-panel hover:bg-white/10'
+                    ? 'bg-white text-black'
+                    : 'bg-white/[0.03] border border-white/5 hover:bg-white/[0.06]'
                 }`}
               >
                 PvP
@@ -169,65 +146,50 @@ export default function GameLayout({
             </div>
           </div>
 
-          {/* Treasury Stats (only show in Treasury mode) */}
+          {/* Treasury Info */}
           {mode === 'treasury' && (
-            <div className="mb-6 glass-panel rounded-xl p-4">
-              <div className="text-xs text-text-secondary mb-2 uppercase font-bold">Treasury Info</div>
-              
-              {/* Treasury Balance */}
-              <div className="mb-3">
-                <div className="text-xs text-text-secondary">Treasury Balance</div>
-                <div className="text-lg font-black text-neon-blue">
-                  {treasuryBalance.toFixed(2)} SOL
-                </div>
-              </div>
-
-              {/* House Stats */}
-              <div className="grid grid-cols-2 gap-3 text-center">
-                <div className="bg-dark-panel rounded-lg p-2">
-                  <div className="text-xs text-text-secondary">House Wins</div>
-                  <div className="text-sm font-bold text-red-500">{houseStats.wins}</div>
-                </div>
-                <div className="bg-dark-panel rounded-lg p-2">
-                  <div className="text-xs text-text-secondary">House Losses</div>
-                  <div className="text-sm font-bold text-neon-green">{houseStats.losses}</div>
-                </div>
-              </div>
-
-              {/* Win Rate */}
-              <div className="mt-3 text-center">
-                <div className="text-xs text-text-secondary">House Win Rate</div>
-                <div className="text-sm font-bold text-neon-purple">{houseStats.winRate}%</div>
+            <div className="mb-5 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">Treasury</span>
+                <span className="font-medium text-white">{treasuryBalance.toFixed(2)} SOL</span>
               </div>
             </div>
           )}
 
-          {/* Play Button - Sticky on Mobile */}
+          {/* Play Button */}
           <motion.button
-            whileHover={!disabled ? { scale: 1.02 } : {}}
-            whileTap={!disabled ? { scale: 0.98 } : {}}
+            whileHover={!disabled ? { scale: 1.01 } : {}}
+            whileTap={!disabled ? { scale: 0.99 } : {}}
             onClick={onPlay}
             disabled={disabled}
-            className={`w-full py-4 text-xl font-black rounded-xl transition sticky bottom-4 lg:static ${
+            className={`w-full py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
               disabled
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                : 'bg-neon-green text-dark-bg hover:shadow-2xl hover:shadow-neon-green/50'
+                ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-white/90'
             }`}
           >
-            {disabled ? '🎲 PLAYING...' : '🎮 PLAY'}
+            {disabled ? 'Processing...' : 'Place Bet'}
           </motion.button>
+
+          {/* Provably fair note */}
+          <div className="mt-4 flex items-center gap-2 text-xs text-text-secondary">
+            <svg className="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>Provably fair with VRF</span>
+          </div>
         </div>
       </div>
 
-      {/* Center Panel - Animation Area */}
-      <div className="lg:col-span-6 order-1 lg:order-2 mb-[400px] lg:mb-0">
-        <div className="glass-panel rounded-3xl p-4 lg:p-8 min-h-[400px] lg:min-h-[600px] flex flex-col">
-          <h2 className="text-5xl font-black text-center mb-8 neon-glow text-neon-green">
-            {title}
-          </h2>
-          <div className="flex-1 flex items-center justify-center">
-            {children}
-          </div>
+      {/* Center Panel - Game Area */}
+      <div className="lg:col-span-6 order-1 lg:order-2 mb-[300px] lg:mb-0">
+        <div className="rounded-2xl p-6 lg:p-8 min-h-[400px] lg:min-h-[550px] flex flex-col bg-white/[0.02] border border-white/5">
+          <h2 className="text-xl font-semibold text-center mb-6 text-white">{title}</h2>
+          <div className="flex-1 flex items-center justify-center">{children}</div>
         </div>
       </div>
 

@@ -1,225 +1,105 @@
-# BagFlip Casino 🎰
+# BagFlip
 
-A fully on-chain casino on Solana. Play 50/50 games with VRF-powered randomness. Flip your bag, win big.
+Provably fair gaming platform built on Solana using Switchboard VRF for verifiable randomness.
 
-**🚀 [Deploy to Vercel](VERCEL_DEPLOYMENT.md)** | **📖 [Full Documentation](MASTER_CHECKLIST.md)**
+## Features
 
-## 🎮 Games
+- **Coin Flip** - Classic 50/50 odds
+- **Dice Roll** - Roll 1-100, pick high or low
+- **Even/Odd** - Guess even or odd
+- **PvP Mode** - Challenge other players directly
 
-- **Coin Flip**: Heads or Tails - classic 50/50
-- **Dice High/Low**: Roll 1-100, bet on 1-50 or 51-100
-- **Even/Odd**: Guess if the number is even or odd
+All games use Switchboard VRF (Verifiable Random Function) to ensure outcomes are provably fair and cannot be manipulated.
 
-## 🎯 Game Modes
+## Tech Stack
 
-- **Treasury Mode**: Instant play against the house
-- **PvP Mode**: Challenge other players, winner takes all
+- **Frontend**: Next.js 14, React, TailwindCSS, Framer Motion
+- **Backend**: Node.js, Express, WebSocket
+- **Blockchain**: Solana, Anchor Framework
+- **Randomness**: Switchboard VRF
 
-## 🏗️ Architecture
+## Getting Started
 
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│   Next.js   │◄────►│   Backend    │◄────►│   Solana    │
-│  Frontend   │      │  (VRF/API)   │      │  Program    │
-└─────────────┘      └──────────────┘      └─────────────┘
-      │                     │
-      │              ┌──────▼──────┐
-      └─────────────►│  WebSocket  │
-                     │ (Live Feed) │
-                     └─────────────┘
-```
+### Prerequisites
 
-## 🚀 Quick Start
+- Node.js 18+
+- Rust & Cargo
+- Solana CLI
+- Anchor CLI
 
-### 1. Install Dependencies
+### Installation
 
 ```bash
-# Root (Anchor)
+# Clone the repo
+git clone https://github.com/yourusername/bagflip.git
+cd bagflip
+
+# Install frontend dependencies
+cd app
 npm install
 
-# Frontend
-cd app && npm install
-
-# Backend
-cd backend && npm install
+# Install backend dependencies
+cd ../backend
+npm install
 ```
 
-### 2. Build & Deploy Contracts
+### Development
 
 ```bash
-# Build
-anchor build
-
-# Deploy to devnet
-anchor deploy --provider.cluster devnet
-
-# Initialize treasury
-npm run init-treasury
-```
-
-### 3. Start Services
-
-```bash
-# Terminal 1: Backend
-cd backend
-npm run dev
-
-# Terminal 2: Frontend
+# Start the frontend
 cd app
 npm run dev
+
+# Start the backend (in another terminal)
+cd backend
+npm run dev
 ```
 
-Visit `http://localhost:3000` 🎉
+Frontend runs on `http://localhost:3000`
+Backend runs on `http://localhost:3001`
 
-## 📁 Project Structure
+### Environment Variables
 
-```
-/
-├── programs/flip-casino/    # Anchor smart contracts
-│   ├── src/
-│   │   ├── lib.rs          # Program entry
-│   │   ├── state.rs        # Game state structs
-│   │   ├── errors.rs       # Custom errors
-│   │   └── instructions/   # Game logic
-│   └── Cargo.toml
-│
-├── app/                     # Next.js frontend
-│   ├── app/                # App router
-│   ├── components/         # React components
-│   ├── hooks/              # Custom hooks
-│   ├── lib/                # Utilities & config
-│   └── package.json
-│
-├── backend/                 # Node.js API
-│   ├── src/
-│   │   ├── index.ts       # Express server
-│   │   └── vrf.ts         # VRF service
-│   └── package.json
-│
-├── scripts/                 # Deployment scripts
-└── tests/                   # Anchor tests
-```
-
-## 🎨 Features
-
-✅ Three 50/50 games with fair odds  
-✅ VRF-powered randomness (Switchboard)  
-✅ Treasury mode for instant play  
-✅ PvP rooms with escrow  
-✅ Live game feed via WebSocket  
-✅ Neon-themed UI with animations  
-✅ Solana wallet integration  
-✅ Leaderboard tracking  
-✅ Mobile responsive  
-
-## 🔧 Tech Stack
-
-**Smart Contracts**
-- Anchor Framework (Solana)
-- Switchboard VRF
-- SPL Token
-
-**Frontend**
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- Solana Wallet Adapter
-
-**Backend**
-- Node.js + Express
-- WebSocket (ws)
-- Anchor TS Client
-
-## 📝 Environment Setup
-
-### Frontend (.env.local)
-```env
-NEXT_PUBLIC_SOLANA_NETWORK=devnet
-NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_PROGRAM_ID=<your_program_id>
-NEXT_PUBLIC_TOKEN_MINT=<your_token_mint>
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_WS_URL=ws://localhost:8080
-```
-
-### Backend (.env)
-```env
-SOLANA_RPC_URL=https://api.devnet.solana.com
-PROGRAM_ID=<your_program_id>
-TREASURY_AUTHORITY_KEYPAIR=<path_to_keypair>
-PORT=3001
-```
-
-## 🧪 Testing
+Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
-# Run all tests
-anchor test
-
-# Run specific test
-anchor test --skip-build
+cp .env.example .env
 ```
 
-## 📦 Deployment
+## Project Structure
 
-### Quick Deploy to Production
+```
+├── app/                 # Next.js frontend
+│   ├── app/            # App router pages
+│   ├── components/     # React components
+│   └── hooks/          # Custom hooks
+├── backend/            # Express backend
+│   └── src/            # Server source code
+├── programs/           # Solana programs (Anchor)
+│   └── flip-casino/    # Main casino program
+└── tests/              # Integration tests
+```
 
-**Frontend (Vercel)**
-1. Push to GitHub
-2. Import to Vercel
-3. Set environment variables
-4. Deploy
+## Deployment
 
-**Backend (Railway)**
-1. Connect GitHub repo
-2. Set root directory to `backend`
-3. Add environment variables
-4. Deploy
-
-**Full Guide**: See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for step-by-step instructions.
-
-**Checklist**: Run `./deploy-checklist.sh` to verify readiness.
+### Frontend (Vercel)
 
 ```bash
-# Quick commands
-git add .
-git commit -m "Ready for deployment"
-git push origin main
-
-# Check deployment readiness
-./deploy-checklist.sh
+cd app
+vercel
 ```
 
-## 🔐 Security
+### Backend (Railway/Render)
 
-- All randomness is VRF-verified on-chain
-- No client-side computation of results
-- PvP escrow prevents rug pulls
-- Rate limiting on backend
-- Treasury authority uses hardware wallet (production)
+Deploy the `backend` directory to your preferred hosting platform.
 
-## 🎯 Roadmap
+### Smart Contracts
 
-- [ ] Switchboard VRF integration (currently simulated)
-- [ ] PvP room timeout/cancellation
-- [ ] Tournament system
-- [ ] NFT rewards for top players
-- [ ] Mobile app
-- [ ] Additional games (Roulette, Blackjack)
+```bash
+anchor build
+anchor deploy --provider.cluster devnet
+```
 
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or PR.
-
-## 📄 License
+## License
 
 MIT
-
-## 🎲 Play Responsibly
-
-This is a demo project. Always gamble responsibly and never bet more than you can afford to lose.
-
----
-
-Built with ⚡ by the BagFlip team | bagflip.xyz

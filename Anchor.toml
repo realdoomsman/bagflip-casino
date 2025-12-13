@@ -2,21 +2,18 @@
 seeds = false
 skip-lint = false
 
-[programs.localnet]
+[programs.devnet]
 flip_casino = "HmavNzKbLtzpZPoAVmtAoGUAuJ8FDyL41dTGjD8dEU2J"
 
-[programs.devnet]
+[programs.localnet]
 flip_casino = "HmavNzKbLtzpZPoAVmtAoGUAuJ8FDyL41dTGjD8dEU2J"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-
-[test]
-startup_wait = 5000

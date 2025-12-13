@@ -206,16 +206,16 @@ export default function PvPLobby() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-5xl font-black text-neon-purple neon-glow mb-2">PvP LOBBY</h2>
-          <p className="text-text-secondary text-lg">Challenge players. Winner takes all. No house edge.</p>
+          <h2 className="text-3xl font-bold text-neon-purple mb-2">PvP Lobby</h2>
+          <p className="text-text-secondary text-sm">Challenge players. Winner takes all. No house edge.</p>
         </div>
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => setShowCreate(!showCreate)}
-          className="px-8 py-4 bg-neon-green text-dark-bg text-xl font-black rounded-xl hover:shadow-2xl hover:shadow-neon-green/50 transition"
+          className="px-6 py-3 bg-gradient-to-r from-neon-green to-emerald-400 text-dark-bg text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-neon-green/25 transition-all duration-300"
         >
-          + CREATE ROOM
+          Create Room
         </motion.button>
       </div>
 
@@ -226,35 +226,40 @@ export default function PvPLobby() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
             onClick={() => setShowResult(null)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-panel rounded-3xl p-12 max-w-md text-center"
+              className="glass-panel rounded-2xl p-10 max-w-sm text-center"
             >
               <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ duration: 0.5, repeat: 2 }}
-                className="text-9xl mb-6"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.4, repeat: 2 }}
+                className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                  showResult.won ? 'bg-neon-green/10 border-2 border-neon-green' : 'bg-red-500/10 border-2 border-red-500'
+                }`}
               >
-                {showResult.won ? '🎉' : '💀'}
+                <svg className={`w-10 h-10 ${showResult.won ? 'text-neon-green' : 'text-red-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  {showResult.won ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  )}
+                </svg>
               </motion.div>
-              <div className={`text-6xl font-black mb-4 neon-glow ${
+              <div className={`text-3xl font-bold mb-3 ${
                 showResult.won ? 'text-neon-green' : 'text-red-500'
               }`}>
-                {showResult.won ? 'YOU WIN!' : 'YOU LOSE'}
+                {showResult.won ? 'You Win' : 'You Lose'}
               </div>
-              <div className="text-3xl font-bold text-text-primary mb-2">
+              <div className="text-lg font-medium text-white/90 mb-2">
                 {showResult.game}
               </div>
-              <div className="text-2xl text-text-secondary mb-8">
+              <div className="text-base text-text-secondary mb-8">
                 {showResult.won 
                   ? `+${(showResult.amount * 2).toLocaleString()} $FLIP`
                   : `-${showResult.amount.toLocaleString()} $FLIP`
@@ -262,9 +267,9 @@ export default function PvPLobby() {
               </div>
               <button
                 onClick={() => setShowResult(null)}
-                className="px-12 py-4 bg-neon-purple text-dark-bg text-xl font-black rounded-xl hover:scale-105 transition"
+                className="px-8 py-3 bg-gradient-to-r from-neon-purple to-purple-400 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-neon-purple/25 transition-all duration-300"
               >
-                CLOSE
+                Close
               </button>
             </motion.div>
           </motion.div>
@@ -275,32 +280,29 @@ export default function PvPLobby() {
       <AnimatePresence>
         {showCreate && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="glass-panel rounded-3xl p-8 mb-8"
+            exit={{ opacity: 0, y: -10 }}
+            className="glass-panel rounded-2xl p-6 mb-8"
           >
-            <h3 className="text-3xl font-black mb-6 text-neon-green">Create PvP Room</h3>
+            <h3 className="text-xl font-bold mb-5 text-neon-green">Create PvP Room</h3>
             
             {/* Game Selection */}
-            <div className="mb-6">
+            <div className="mb-5">
               <label className="block text-sm text-text-secondary mb-3">Choose Game</label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <GameButton
                   label="Coin Flip"
-                  emoji="🪙"
                   selected={selectedGame === 'CoinFlip'}
                   onClick={() => setSelectedGame('CoinFlip')}
                 />
                 <GameButton
                   label="Dice"
-                  emoji="🎲"
                   selected={selectedGame === 'Dice'}
                   onClick={() => setSelectedGame('Dice')}
                 />
                 <GameButton
                   label="Even/Odd"
-                  emoji="🔢"
                   selected={selectedGame === 'EvenOdd'}
                   onClick={() => setSelectedGame('EvenOdd')}
                 />
@@ -308,29 +310,29 @@ export default function PvPLobby() {
             </div>
 
             {/* Wager Input */}
-            <div className="mb-6">
+            <div className="mb-5">
               <label className="block text-sm text-text-secondary mb-2">Wager Amount ($FLIP)</label>
               <input
                 type="number"
                 value={wager}
                 onChange={(e) => setWager(e.target.value)}
                 placeholder="Enter amount..."
-                className="w-full px-4 py-4 bg-dark-panel border-2 border-neon-green/30 focus:border-neon-green outline-none text-2xl font-bold rounded-xl"
+                className="w-full px-4 py-3 bg-dark-panel border border-white/10 focus:border-neon-green/50 outline-none text-xl font-bold rounded-xl transition-colors"
               />
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={createRoom}
                 disabled={!wager}
-                className="flex-1 py-4 bg-neon-green text-dark-bg text-xl font-black rounded-xl hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 bg-gradient-to-r from-neon-green to-emerald-400 text-dark-bg text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-neon-green/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                CREATE ROOM
+                Create Room
               </button>
               <button
                 onClick={() => setShowCreate(false)}
-                className="px-8 py-4 glass-panel rounded-xl hover:bg-white/10 transition font-bold"
+                className="px-6 py-3 glass-panel rounded-xl hover:bg-white/5 transition-all duration-300 text-sm font-medium"
               >
                 Cancel
               </button>
@@ -342,8 +344,8 @@ export default function PvPLobby() {
       {/* My Rooms */}
       {myRooms.length > 0 && (
         <div className="mb-8">
-          <h3 className="text-2xl font-black mb-4 text-neon-blue">Your Rooms</h3>
-          <div className="space-y-4">
+          <h3 className="text-lg font-bold mb-4 text-neon-blue">Your Rooms</h3>
+          <div className="space-y-3">
             {myRooms.map((room) => (
               <RoomCard
                 key={room.id}
@@ -357,22 +359,22 @@ export default function PvPLobby() {
       )}
 
       {/* Filters */}
-      <div className="glass-panel rounded-2xl p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="glass-panel rounded-2xl p-5 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Game Type Filter */}
           <div>
-            <label className="block text-sm text-text-secondary mb-2">Filter by Game</label>
+            <label className="block text-xs text-text-secondary mb-2 font-medium">Filter by Game</label>
             <div className="grid grid-cols-4 gap-2">
               <FilterButton label="All" active={filterGame === 'all'} onClick={() => setFilterGame('all')} />
-              <FilterButton label="🪙" active={filterGame === 'CoinFlip'} onClick={() => setFilterGame('CoinFlip')} />
-              <FilterButton label="🎲" active={filterGame === 'Dice'} onClick={() => setFilterGame('Dice')} />
-              <FilterButton label="🔢" active={filterGame === 'EvenOdd'} onClick={() => setFilterGame('EvenOdd')} />
+              <FilterButton label="Flip" active={filterGame === 'CoinFlip'} onClick={() => setFilterGame('CoinFlip')} />
+              <FilterButton label="Dice" active={filterGame === 'Dice'} onClick={() => setFilterGame('Dice')} />
+              <FilterButton label="E/O" active={filterGame === 'EvenOdd'} onClick={() => setFilterGame('EvenOdd')} />
             </div>
           </div>
 
           {/* Wager Size Filter */}
           <div>
-            <label className="block text-sm text-text-secondary mb-2">Filter by Wager</label>
+            <label className="block text-xs text-text-secondary mb-2 font-medium">Filter by Wager</label>
             <div className="grid grid-cols-4 gap-2">
               <FilterButton label="All" active={filterWager === 'all'} onClick={() => setFilterWager('all')} />
               <FilterButton label="Low" active={filterWager === 'low'} onClick={() => setFilterWager('low')} />
@@ -385,14 +387,18 @@ export default function PvPLobby() {
 
       {/* Available Rooms */}
       <div>
-        <h3 className="text-2xl font-black mb-4 text-neon-purple">
+        <h3 className="text-lg font-bold mb-4 text-neon-purple">
           Available Rooms ({availableRooms.length})
         </h3>
         {availableRooms.length === 0 ? (
-          <div className="glass-panel rounded-3xl p-20 text-center">
-            <div className="text-8xl mb-6 opacity-30">🎮</div>
-            <div className="text-2xl text-text-secondary mb-4">No rooms available</div>
-            <div className="text-text-secondary">Create a room to challenge other players!</div>
+          <div className="glass-panel rounded-2xl p-16 text-center">
+            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl border border-white/10 flex items-center justify-center">
+              <svg className="w-8 h-8 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div className="text-lg text-white/80 mb-2">No rooms available</div>
+            <div className="text-sm text-text-secondary">Create a room to challenge other players</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,67 +431,65 @@ function RoomCard({ room, isOwner, onJoin, onCancel }: any) {
   const seconds = timeLeft % 60
   const isExpiringSoon = timeLeft < 60
 
-  const gameEmoji: Record<string, string> = {
-    CoinFlip: '🪙',
-    Dice: '🎲',
-    EvenOdd: '🔢',
+  const gameLabel: Record<string, string> = {
+    CoinFlip: 'Flip',
+    Dice: 'Dice',
+    EvenOdd: 'E/O',
   }
-  
-  const emoji = gameEmoji[room.gameType] || '🎮'
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
-      className={`glass-panel rounded-2xl p-6 transition-all ${
-        isExpiringSoon ? 'ring-2 ring-red-500 ring-opacity-50' : ''
+      className={`glass-panel rounded-2xl p-5 transition-all ${
+        isExpiringSoon ? 'ring-1 ring-red-500/50' : ''
       }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="text-5xl">{emoji}</div>
+          <div className="w-10 h-10 rounded-xl bg-neon-purple/10 flex items-center justify-center">
+            <span className="text-sm font-bold text-neon-purple">{gameLabel[room.gameType] || 'Game'}</span>
+          </div>
           <div>
-            <div className="text-xl font-black text-neon-purple">{room.gameType}</div>
-            <div className="text-sm text-text-secondary">
+            <div className="text-base font-bold text-white/90">{room.gameType}</div>
+            <div className="text-xs text-text-secondary font-mono">
               {room.creator.slice(0, 6)}...{room.creator.slice(-4)}
             </div>
           </div>
         </div>
         {isOwner && (
-          <div className="px-3 py-1 bg-neon-blue/20 text-neon-blue text-xs font-bold rounded-full">
-            YOUR ROOM
+          <div className="px-2.5 py-1 bg-neon-blue/10 text-neon-blue text-xs font-medium rounded-lg border border-neon-blue/20">
+            Your Room
           </div>
         )}
       </div>
 
       {/* Wager */}
       <div className="mb-4">
-        <div className="text-sm text-text-secondary mb-1">Wager</div>
-        <div className="text-3xl font-black text-neon-green">
+        <div className="text-xs text-text-secondary mb-1">Wager</div>
+        <div className="text-xl font-bold text-neon-green">
           {room.wager.toLocaleString()} $FLIP
         </div>
       </div>
 
-      {/* Timer with Glow */}
+      {/* Timer */}
       <div className="mb-4">
-        <div className="text-sm text-text-secondary mb-1">Time Remaining</div>
-        <div className={`text-xl font-bold transition-all ${
-          isExpiringSoon 
-            ? 'text-red-500 animate-pulse' 
-            : 'text-text-primary'
-        } ${isExpiringSoon ? 'drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' : ''}`}>
+        <div className="text-xs text-text-secondary mb-1">Time Remaining</div>
+        <div className={`text-base font-semibold transition-all ${
+          isExpiringSoon ? 'text-red-500' : 'text-white/80'
+        }`}>
           {minutes}:{seconds.toString().padStart(2, '0')}
         </div>
         {isExpiringSoon && (
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xs text-red-500 mt-1 font-bold"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-xs text-red-500 mt-1 font-medium"
           >
-            ⚠️ Expiring soon!
+            Expiring soon
           </motion.div>
         )}
       </div>
@@ -493,20 +497,20 @@ function RoomCard({ room, isOwner, onJoin, onCancel }: any) {
       {/* Status Indicator */}
       <div className="mb-4">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${room.status === 'waiting' ? 'bg-neon-green animate-pulse' : 'bg-gray-500'}`}></div>
-          <div className="text-sm text-text-secondary capitalize">{room.status}</div>
+          <div className={`w-1.5 h-1.5 rounded-full ${room.status === 'waiting' ? 'bg-neon-green' : 'bg-gray-500'}`}></div>
+          <div className="text-xs text-text-secondary capitalize">{room.status}</div>
         </div>
       </div>
 
       {/* Action Button */}
       {isOwner ? (
         <div className="flex gap-2">
-          <div className="flex-1 py-3 glass-panel rounded-xl text-center font-bold text-text-secondary">
+          <div className="flex-1 py-2.5 glass-panel rounded-xl text-center text-sm font-medium text-text-secondary">
             Waiting for opponent...
           </div>
           <button
             onClick={onCancel}
-            className="px-6 py-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500/30 transition font-bold"
+            className="px-4 py-2.5 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all duration-300 text-sm font-medium border border-red-500/20"
           >
             Cancel
           </button>
@@ -514,27 +518,26 @@ function RoomCard({ room, isOwner, onJoin, onCancel }: any) {
       ) : (
         <button
           onClick={onJoin}
-          className="w-full py-4 bg-neon-purple text-dark-bg text-xl font-black rounded-xl hover:scale-105 transition"
+          className="w-full py-3 bg-gradient-to-r from-neon-purple to-purple-400 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-neon-purple/25 transition-all duration-300"
         >
-          JOIN ROOM
+          Join Room
         </button>
       )}
     </motion.div>
   )
 }
 
-function GameButton({ label, emoji, selected, onClick }: any) {
+function GameButton({ label, selected, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`p-4 rounded-xl transition ${
+      className={`p-4 rounded-xl transition-all duration-300 ${
         selected
-          ? 'bg-neon-green text-dark-bg'
-          : 'glass-panel hover:bg-white/10'
+          ? 'bg-gradient-to-r from-neon-green to-emerald-400 text-dark-bg'
+          : 'glass-panel hover:bg-white/5'
       }`}
     >
-      <div className="text-4xl mb-2">{emoji}</div>
-      <div className="font-bold">{label}</div>
+      <div className="text-sm font-bold">{label}</div>
     </button>
   )
 }
@@ -543,10 +546,10 @@ function FilterButton({ label, active, onClick }: { label: string; active: boole
   return (
     <button
       onClick={onClick}
-      className={`py-2 px-3 rounded-lg font-bold transition ${
+      className={`py-2 px-3 rounded-lg text-xs font-medium transition-all duration-300 ${
         active
-          ? 'bg-neon-purple text-dark-bg'
-          : 'glass-panel hover:bg-white/10 text-text-secondary'
+          ? 'bg-neon-purple/20 text-neon-purple border border-neon-purple/30'
+          : 'glass-panel hover:bg-white/5 text-text-secondary'
       }`}
     >
       {label}

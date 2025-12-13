@@ -2,239 +2,174 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import GameLayout from './GameLayout'
 import { useFlipCasino } from '@/hooks/useFlipCasino'
 import { useWalletBalance } from '@/hooks/useWalletBalance'
+
+const Dice3D = ({ number, size = 100, color = '#8b5cf6' }: { number: number, size?: number, color?: string }) => {
+  const dots: { [key: number]: [number, number][] } = {
+    1: [[50, 50]],
+    2: [[30, 30], [70, 70]],
+    3: [[30, 30], [50, 50], [70, 70]],
+    4: [[30, 30], [70, 30], [30, 70], [70, 70]],
+    5: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]],
+    6: [[30, 30], [70, 30], [30, 50], [70, 50], [30, 70], [70, 70]]
+  }
+  const displayNum = Math.min(6, Math.max(1, number % 6 || 6))
+  
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      <defs>
+        <linearGradient id="diceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={color} />
+          <stop offset="100%" stopColor="#4c1d95" />
+        </linearGradient>
+        <filter id="diceShadow">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.4"/>
+        </filter>
+      </defs>
+      <rect x="8" y="8" width="84" height="84" rx="16" fill="url(#diceGrad)" filter="url(#diceShadow)"/>
+      <rect x="12" y="12" width="76" height="76" rx="14" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2"/>
+      {dots[displayNum]?.map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="8" fill="white"/>
+      ))}
+    </svg>
+  )
+}
+
+const NumberDisplay = ({ number, won }: { number: number, won?: boolean }) => (
+  <div className={`relative w-32 h-32 rounded-2xl flex items-center justify-center ${
+    won === true ? 'bg-green-500/20 border-2 border-green-500/50' : 
+    won === false ? 'bg-red-500/20 border-2 border-red-500/50' : 
+    'bg-violet-500/20 border-2 border-violet-500/50'
+  }`}>
+    <span className={`text-5xl font-bold ${
+      won === true ? 'text-green-400' : won === false ? 'text-red-400' : 'text-violet-400'
+    }`}>{number}</span>
+  </div>
+)
 
 export default function DiceGame() {
   const [choice, setChoice] = useState<'low' | 'high' | null>(null)
   const [wager, setWager] = useState('')
   const [isRolling, setIsRolling] = useState(false)
-  const [displayNumber, setDisplayNumber] = useState(50)
+  const [displayNum, setDisplayNum] = useState(50)
   const [result, setResult] = useState<{ number: number; won: boolean } | null>(null)
   const balance = useWalletBalance()
   const { playDiceGame, loading } = useFlipCasino()
 
   useEffect(() => {
     if (isRolling) {
-      const interval = setInterval(() => {
-        setDisplayNumber(Math.floor(Math.random() * 100) + 1)
-      }, 50)
-      return () => clearInterval(interval)
+      const i = setInterval(() => setDisplayNum(Math.floor(Math.random() * 100) + 1), 50)
+      return () => clearInterval(i)
     }
   }, [isRolling])
 
   const handlePlay = async () => {
     if (!choice || !wager) return
-    
-    // Client-side validation
-    const wagerAmount = parseFloat(wager)
-    
-    if (isNaN(wagerAmount) || wagerAmount <= 0) {
-      alert('Please enter a valid wager amount')
-      return
-    }
-    
-    const MIN_WAGER = 0.000001
-    const MAX_WAGER = 1000
-    
-    if (wagerAmount < MIN_WAGER || wagerAmount > MAX_WAGER) {
-      alert(`Wager must be between ${MIN_WAGER} and ${MAX_WAGER} $FLIP`)
-      return
-    }
-    
-    // Prevent spam
-    if (isRolling || loading) {
-      return
-    }
-    
+    const amt = parseFloat(wager)
+    if (isNaN(amt) || amt <= 0 || isRolling || loading) return
+
     setIsRolling(true)
     setResult(null)
-    
+
     try {
-      // Call real Anchor program (Treasury mode)
-      const { vrfResult } = await playDiceGame(wagerAmount, choice)
-      
-      // Faster settlement for Treasury mode (1.2s animation)
-      await new Promise(resolve => setTimeout(resolve, 1200))
-      
-      // Get actual roll from VRF
+      const { vrfResult } = await playDiceGame(amt, choice)
+      await new Promise(r => setTimeout(r, 1500))
       const roll = (vrfResult.value % 100) + 1
-      const won = vrfResult.won
-      
-      setDisplayNumber(roll)
-      setResult({ number: roll, won })
-    } catch (error: any) {
-      console.error('Error playing:', error)
-      alert(error?.message || 'Transaction failed. Please try again.')
+      setDisplayNum(roll)
+      setResult({ number: roll, won: vrfResult.won })
+    } catch (e: any) {
+      alert(e?.message || 'Transaction failed')
     } finally {
       setIsRolling(false)
     }
   }
 
-  return (
-    <GameLayout
-      title="DICE HIGH/LOW"
-      wager={wager}
-      setWager={setWager}
-      onPlay={handlePlay}
-      disabled={!choice || !wager || isRolling || loading}
-      balance={balance}
-    >
-      <div className="w-full">
-        {/* Choice Buttons */}
-        {!isRolling && !result && (
-          <div className="flex gap-6 justify-center mb-12">
-            <ChoiceButton
-              label="LOW"
-              range="1-50"
-              selected={choice === 'low'}
-              onClick={() => setChoice('low')}
-              color="neon-blue"
-            />
-            <ChoiceButton
-              label="HIGH"
-              range="51-100"
-              selected={choice === 'high'}
-              onClick={() => setChoice('high')}
-              color="neon-purple"
-            />
-          </div>
-        )}
+  const reset = () => { setResult(null); setChoice(null) }
 
-        {/* Animation Area */}
-        <div className="flex items-center justify-center min-h-[400px]">
-          <AnimatePresence mode="wait">
-            {isRolling ? (
-              <motion.div
-                key="rolling"
-                className="text-center"
-              >
-                <motion.div
-                  className="text-[180px] font-black text-neon-blue"
-                  animate={{ 
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ duration: 0.2, repeat: Infinity }}
-                  style={{
-                    textShadow: '0 0 30px rgba(0, 191, 255, 0.6)'
-                  }}
-                >
-                  {displayNumber}
-                </motion.div>
-                <div className="text-2xl text-gray-400 font-bold mt-4">
-                  Rolling...
-                </div>
-              </motion.div>
-            ) : result ? (
-              <motion.div
-                key="result"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", duration: 0.8 }}
-                className="text-center w-full"
-              >
-                {/* Number with Glow */}
-                <motion.div 
-                  className={`text-[180px] lg:text-[220px] font-black mb-6 ${
-                    result.won ? 'text-neon-blue neon-glow' : 'text-red-500'
-                  }`}
-                  animate={{ 
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ duration: 0.5, repeat: 2 }}
-                  style={{
-                    filter: result.won 
-                      ? 'drop-shadow(0 0 30px rgba(0, 191, 255, 0.8))' 
-                      : 'drop-shadow(0 0 30px rgba(239, 68, 68, 0.8))',
-                    textShadow: result.won
-                      ? '0 0 20px rgba(0, 191, 255, 1), 0 0 40px rgba(0, 191, 255, 0.8)'
-                      : '0 0 20px rgba(239, 68, 68, 1), 0 0 40px rgba(239, 68, 68, 0.8)'
-                  }}
-                >
-                  {result.number}
-                </motion.div>
-                
-                {/* Big Result Text */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className={`text-6xl lg:text-7xl font-black neon-glow mb-4 ${
-                    result.won ? 'text-neon-blue' : 'text-red-500'
-                  }`}
-                >
-                  {result.won ? '🎉 YOU WIN!' : '💀 YOU LOSE'}
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-2xl lg:text-3xl text-text-secondary font-bold mb-2"
-                >
-                  {result.number > 50 ? 'HIGH' : 'LOW'}
-                </motion.div>
-                
-                <div className="text-xl text-text-secondary">
-                  Rolled {result.number}
-                </div>
-                
-                {/* Play Again Button */}
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setResult(null)}
-                  className="mt-8 px-12 py-4 bg-neon-blue text-dark-bg text-xl lg:text-2xl font-black rounded-xl hover:shadow-2xl hover:shadow-neon-blue/50 transition-all"
-                >
-                  🔁 PLAY AGAIN
-                </motion.button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="waiting"
-                className="text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <motion.div
-                  className="text-[150px] opacity-30"
-                  animate={{ 
-                    scale: [1, 1.05, 1]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  🎲
-                </motion.div>
-                <div className="text-2xl text-text-secondary mt-6">
-                  Choose High or Low
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+  return (
+    <div className="card p-8">
+      {/* Wager */}
+      <div className="mb-8">
+        <label className="block text-sm font-semibold text-white/50 mb-3">Wager Amount</label>
+        <div className="flex gap-3">
+          <input type="number" value={wager} onChange={(e) => setWager(e.target.value)} placeholder="0.00" className="input flex-1" />
+          <button onClick={() => setWager(Math.max(0, balance - 0.01).toFixed(2))} className="btn btn-secondary px-5">MAX</button>
         </div>
+        <div className="flex gap-2 mt-3">
+          {[0.1, 0.5, 1, 5].map((a) => (
+            <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-3 text-sm font-semibold text-white/40 bg-white/[0.03] rounded-xl border border-white/5 hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/30 transition-all">
+              {a} SOL
+            </button>
+          ))}
+        </div>
+        <div className="text-sm text-white/30 mt-3">Balance: {balance.toFixed(4)} SOL</div>
       </div>
-    </GameLayout>
-  )
-}
 
-function ChoiceButton({ label, range, selected, onClick, color }: any) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className={`px-16 py-8 rounded-2xl text-2xl font-black transition-all ${
-        selected 
-          ? `bg-${color} text-dark-bg shadow-2xl shadow-${color}/50` 
-          : 'glass-panel hover:bg-white/10'
-      }`}
-    >
-      <div className="text-5xl font-black mb-2">{label}</div>
-      <div className="text-lg opacity-70">{range}</div>
-    </motion.button>
+      {/* Choice */}
+      {!isRolling && !result && (
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <button onClick={() => setChoice('low')} className={`choice-btn ${choice === 'low' ? 'choice-btn-selected' : ''}`}>
+            <div className="flex justify-center gap-2 mb-3">
+              <Dice3D number={1} size={50} color="#06b6d4" />
+              <Dice3D number={3} size={50} color="#06b6d4" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">1-50</div>
+            <div className="text-sm text-white/50">Low</div>
+          </button>
+          <button onClick={() => setChoice('high')} className={`choice-btn ${choice === 'high' ? 'choice-btn-selected' : ''}`}>
+            <div className="flex justify-center gap-2 mb-3">
+              <Dice3D number={5} size={50} color="#8b5cf6" />
+              <Dice3D number={6} size={50} color="#8b5cf6" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">51-100</div>
+            <div className="text-sm text-white/50">High</div>
+          </button>
+        </div>
+      )}
+
+      {/* Animation */}
+      <div className="min-h-[220px] flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          {isRolling ? (
+            <motion.div key="roll" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+              <motion.div
+                animate={{ rotate: [0, 360], scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.3, repeat: Infinity }}
+              >
+                <NumberDisplay number={displayNum} />
+              </motion.div>
+              <div className="text-sm text-white/40 mt-6">Rolling...</div>
+            </motion.div>
+          ) : result ? (
+            <motion.div key="result" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+              <motion.div initial={{ y: -20 }} animate={{ y: 0 }}>
+                <NumberDisplay number={result.number} won={result.won} />
+              </motion.div>
+              <div className={`text-3xl font-bold mt-4 mb-2 ${result.won ? 'text-green-400' : 'text-red-400'}`}>
+                {result.won ? 'You Won!' : 'You Lost'}
+              </div>
+              <div className="text-sm text-white/40 mb-6">{result.number > 50 ? 'High' : 'Low'}</div>
+              <button onClick={reset} className="btn btn-secondary">Play Again</button>
+            </motion.div>
+          ) : (
+            <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+              <div className="flex justify-center gap-3 opacity-30">
+                <Dice3D number={3} size={70} />
+                <Dice3D number={4} size={70} />
+              </div>
+              <div className="text-sm text-white/30 mt-4">Pick high or low</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Play */}
+      {!result && (
+        <button onClick={handlePlay} disabled={!choice || !wager || isRolling || loading} className="btn btn-primary w-full mt-6">
+          {isRolling ? 'Rolling...' : 'Roll Dice'}
+        </button>
+      )}
+    </div>
   )
 }

@@ -4,10 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
 export default function LiveTicker() {
-  const [stats, setStats] = useState<string[]>([
-    "Loading stats...",
-    "Loading stats...",
-  ])
+  const [stats, setStats] = useState<string[]>(['Loading...', 'Loading...'])
 
   useEffect(() => {
     fetchStats()
@@ -20,15 +17,14 @@ export default function LiveTicker() {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
       const response = await fetch(backendUrl + '/api/stats')
       const data = await response.json()
-      
+
       const statsArray = [
         `${data.totalGames || 0} games played`,
-        `Biggest win: ${data.biggestWin}`,
         `Treasury: ${data.treasurySize}`,
-        `House wins: ${data.houseWins || 0}`,
+        `Biggest win: ${data.biggestWin}`,
+        'Provably fair with Switchboard VRF',
       ]
-      
-      // Duplicate for seamless scrolling
+
       setStats([...statsArray, ...statsArray])
     } catch (error) {
       console.error('Error fetching ticker stats:', error)
@@ -36,17 +32,14 @@ export default function LiveTicker() {
   }
 
   return (
-    <div className="overflow-hidden py-5 border-y border-white/10 bg-black/20">
+    <div className="overflow-hidden py-3 border-y border-white/5">
       <motion.div
         animate={{ x: [0, -1920] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
         className="flex gap-12 whitespace-nowrap"
       >
         {stats.map((stat, i) => (
-          <span
-            key={i}
-            className="text-lg font-bold text-neon-green"
-          >
+          <span key={i} className="text-xs font-medium text-text-secondary">
             {stat}
           </span>
         ))}
