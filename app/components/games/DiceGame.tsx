@@ -44,7 +44,6 @@ export default function DiceGame() {
 
   return (
     <div className="card p-5 sm:p-8">
-      {/* Wager */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-white/50 mb-2">Wager Amount</label>
         <div className="flex gap-2">
@@ -53,7 +52,7 @@ export default function DiceGame() {
         </div>
         <div className="flex gap-2 mt-2">
           {[0.1, 0.5, 1, 5].map((a) => (
-            <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-2.5 text-xs sm:text-sm font-medium text-white/40 bg-white/[0.02] rounded-xl border border-white/5 hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/20 transition-all">
+            <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-2.5 text-xs sm:text-sm font-medium text-white/40 bg-white/[0.02] rounded-xl border border-white/5 hover:bg-[#00ff88]/10 hover:text-[#00ff88] hover:border-[#00ff88]/20 transition-all">
               {a}
             </button>
           ))}
@@ -61,7 +60,6 @@ export default function DiceGame() {
         <div className="text-xs text-white/30 mt-2">Balance: {balance.toFixed(4)} SOL</div>
       </div>
 
-      {/* Choice */}
       {!isRolling && !result && (
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button onClick={() => setChoice('low')} className={`choice-btn ${choice === 'low' ? 'choice-btn-selected' : ''}`}>
@@ -75,20 +73,19 @@ export default function DiceGame() {
         </div>
       )}
 
-      {/* Animation */}
       <div className="min-h-[180px] sm:min-h-[200px] flex items-center justify-center">
         <AnimatePresence mode="wait">
           {isRolling ? (
             <motion.div key="roll" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-              <motion.div className="text-5xl sm:text-6xl font-bold text-violet-400" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.1, repeat: Infinity }}>
+              <motion.div className="text-5xl sm:text-6xl font-bold text-[#00ff88]" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.1, repeat: Infinity }}>
                 {displayNum}
               </motion.div>
               <div className="text-sm text-white/40 mt-4">Rolling...</div>
             </motion.div>
           ) : result ? (
             <motion.div key="result" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-              <div className={`text-5xl sm:text-6xl font-bold mb-3 ${result.won ? 'text-green-400' : 'text-red-400'}`}>{result.number}</div>
-              <div className={`text-2xl sm:text-3xl font-bold mb-1 ${result.won ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`text-5xl sm:text-6xl font-bold mb-3 ${result.won ? 'text-[#00ff88]' : 'text-red-400'}`}>{result.number}</div>
+              <div className={`text-2xl sm:text-3xl font-bold mb-1 ${result.won ? 'text-[#00ff88]' : 'text-red-400'}`}>
                 {result.won ? 'You Won!' : 'You Lost'}
               </div>
               <div className="text-sm text-white/40 mb-4">{result.number > 50 ? 'High' : 'Low'}</div>
@@ -103,7 +100,6 @@ export default function DiceGame() {
         </AnimatePresence>
       </div>
 
-      {/* Play */}
       {!result && (
         <button onClick={handlePlay} disabled={!choice || !wager || isRolling || loading} className="btn btn-primary w-full mt-4">
           {isRolling ? 'Rolling...' : 'Roll Dice'}

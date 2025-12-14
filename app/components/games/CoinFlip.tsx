@@ -55,7 +55,6 @@ export default function CoinFlip() {
 
   return (
     <div className="card p-5 sm:p-8">
-      {/* Wager */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-white/50 mb-2">Wager Amount</label>
         <div className="flex gap-2">
@@ -64,7 +63,7 @@ export default function CoinFlip() {
         </div>
         <div className="flex gap-2 mt-2">
           {[0.1, 0.5, 1, 5].map((a) => (
-            <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-2.5 text-xs sm:text-sm font-medium text-white/40 bg-white/[0.02] rounded-xl border border-white/5 hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/20 transition-all">
+            <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-2.5 text-xs sm:text-sm font-medium text-white/40 bg-white/[0.02] rounded-xl border border-white/5 hover:bg-[#00ff88]/10 hover:text-[#00ff88] hover:border-[#00ff88]/20 transition-all">
               {a}
             </button>
           ))}
@@ -72,7 +71,6 @@ export default function CoinFlip() {
         <div className="text-xs text-white/30 mt-2">Balance: {balance.toFixed(4)} SOL</div>
       </div>
 
-      {/* Choice */}
       {!isFlipping && !result && (
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button onClick={() => setChoice('heads')} className={`choice-btn ${choice === 'heads' ? 'choice-btn-selected' : ''}`}>
@@ -86,7 +84,6 @@ export default function CoinFlip() {
         </div>
       )}
 
-      {/* Animation */}
       <div className="min-h-[180px] sm:min-h-[200px] flex items-center justify-center">
         <AnimatePresence mode="wait">
           {isFlipping ? (
@@ -98,10 +95,10 @@ export default function CoinFlip() {
             </motion.div>
           ) : result ? (
             <motion.div key="result" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-              <motion.div className={result.won ? 'drop-shadow-[0_0_25px_rgba(34,197,94,0.5)]' : 'drop-shadow-[0_0_25px_rgba(239,68,68,0.4)]'}>
+              <motion.div className={result.won ? 'drop-shadow-[0_0_25px_rgba(0,255,136,0.5)]' : 'drop-shadow-[0_0_25px_rgba(239,68,68,0.4)]'}>
                 <GoldCoin side={result.side} size={100} />
               </motion.div>
-              <div className={`text-2xl sm:text-3xl font-bold mt-4 mb-1 ${result.won ? 'text-green-400' : 'text-red-400'}`}>
+              <div className={`text-2xl sm:text-3xl font-bold mt-4 mb-1 ${result.won ? 'text-[#00ff88]' : 'text-red-400'}`}>
                 {result.won ? 'You Won!' : 'You Lost'}
               </div>
               <div className="text-sm text-white/40 mb-4">{result.side.charAt(0).toUpperCase() + result.side.slice(1)}</div>
@@ -116,7 +113,6 @@ export default function CoinFlip() {
         </AnimatePresence>
       </div>
 
-      {/* Play */}
       {!result && (
         <button onClick={handlePlay} disabled={!choice || !wager || isFlipping || loading} className="btn btn-primary w-full mt-4">
           {isFlipping ? 'Flipping...' : 'Flip Coin'}
