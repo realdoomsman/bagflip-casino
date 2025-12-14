@@ -4,8 +4,6 @@ import { Connection, PublicKey, Keypair } from '@solana/web3.js'
 import { AnchorProvider, Program } from '@coral-xyz/anchor'
 import dotenv from 'dotenv'
 import crypto from 'crypto'
-import nacl from 'tweetnacl'
-import bs58 from 'bs58'
 import { VRFService } from './vrf'
 import { SettlementEngine } from './settlement'
 import { DatabaseService } from './database'
@@ -13,9 +11,10 @@ import { PayoutService } from './payout'
 
 dotenv.config()
 
-// Simple password hashing (use bcrypt in production)
+// Simple password hashing
 const hashPassword = (password: string): string => {
-  return crypto.createHash('sha256').update(password + process.env.PASSWORD_SALT || 'bagflip_salt').digest('hex')
+  const salt = process.env.PASSWORD_SALT || 'bagflip_salt'
+  return crypto.createHash('sha256').update(password + salt).digest('hex')
 }
 
 const generateToken = (): string => {
@@ -291,65 +290,6 @@ app.post('/api/auth/login', rateLimit(10, 60000), async (req, res) => {
       username: user.username,
       balance: user.balance,
       depositAddress: user.deposit_address
-    }
-  })
-})
-
-// Login/Register with wallet signature
-app.post('/api/auth/wallet', rateLimit(10, 60000), async (req, res) => {
-  const { walletAddress, signature, message } = sanitizeInput(req.body)
-  
-  if (!walletAddress || !signature || !message) {
-    return res.status(400).json({ error: 'Wallet address, signature, and message required' })
-  }
-  
-  // Verify signature
-  try {
-    const publicKey = new PublicKey(walletAddress)
-    const messageBytes = new TextEncoder().encode(message)
-    const signatureBytes = bs58.decode(signature)
-    
-    const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKey.toBytes())
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid signature' })
-    }
-  } catch (error) {
-    return res.status(401).json({ error: 'Signature verification failed' })
-  }
-  
-  // Check if user exists
-  let user = db.getUserByWallet(walletAddress)
-  
-  if (!user) {
-    // Create new account
-    const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2)}`
-    const username = `user_${walletAddress.slice(0, 8)}`
-    const depositAddress = generateDepositAddress()
-    
-    user = db.createUserAccount({
-      id: userId,
-      username,
-      walletAddress,
-      depositAddress
-    })
-    
-    if (!user) {
-      return res.status(500).json({ error: 'Failed to create account' })
-    }
-  }
-  
-  const token = generateToken()
-  db.updateSessionToken(user.id, token)
-  
-  res.json({
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      balance: user.balance,
-      depositAddress: user.deposit_address,
-      walletAddress: user.wallet_address
     }
   })
 })
