@@ -459,7 +459,7 @@ export class DatabaseService {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(user.id, user.username, user.email || null, user.passwordHash || null, user.walletAddress || null, user.depositAddress, Date.now())
       
-      return this.getUserById(user.id)
+      return this.getUserById(user.id) || null
     } catch (error: any) {
       if (error.message?.includes('UNIQUE constraint')) {
         return null
