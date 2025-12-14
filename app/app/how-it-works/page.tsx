@@ -1,50 +1,57 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const WalletMultiButton = dynamic(
+  async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+  { ssr: false }
+)
 
 export default function HowItWorks() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-[#0a0f0f]">
+      <header className="border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-white font-bold text-lg">BagFlip</Link>
-            <nav className="hidden sm:flex items-center gap-6">
-              <Link href="/" className="text-sm text-white/40 hover:text-white transition">Play</Link>
-              <Link href="/how-it-works" className="text-sm text-white">How it Works</Link>
-            </nav>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">B</span>
+              </div>
+              <span className="text-white font-bold text-xl">BagFlip</span>
+            </Link>
           </div>
+          <WalletMultiButton />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold text-white mb-8">How it Works</h1>
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        <h1 className="text-3xl font-bold text-white mb-8">How BagFlip Works</h1>
 
-        <div className="space-y-6 text-white/60">
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-2">1. Pick a game</h2>
-            <p>Choose from Coin Flip, Dice, or Even/Odd. All games have true 50/50 odds.</p>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-2">2. Enter your bet</h2>
-            <p>Enter how much SOL you want to wager and make your prediction.</p>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-2">3. Connect & play</h2>
-            <p>Connect your Solana wallet (Phantom, Solflare, etc.) and confirm the transaction.</p>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white mb-2">4. Win 1.96x</h2>
-            <p>If you win, you get 1.96x your bet instantly. Results are verified on-chain using VRF.</p>
-          </div>
+        <div className="space-y-6">
+          {[
+            { num: '1', title: 'Pick your side', desc: 'Choose heads or tails, high or low, even or odd.' },
+            { num: '2', title: 'Set your wager', desc: 'Enter how much SOL you want to bet.' },
+            { num: '3', title: 'Flip and win', desc: 'If you win, you get 1.96x your bet instantly.' },
+          ].map((step) => (
+            <div key={step.num} className="flex gap-4 p-5 bg-[#111a1a] rounded-xl border border-cyan-500/20">
+              <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold">{step.num}</span>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold mb-1">{step.title}</h3>
+                <p className="text-sm text-white/50">{step.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-10 p-5 rounded-lg border border-white/10">
+        <div className="mt-8 p-5 bg-[#111a1a] rounded-xl border border-cyan-500/20">
           <h3 className="text-white font-semibold mb-2">Provably Fair</h3>
-          <p className="text-sm text-white/50">Every result uses Solana VRF. Outcomes cannot be manipulated and can be verified on-chain by anyone.</p>
+          <p className="text-sm text-white/50">All results use Solana VRF. Outcomes are verifiable on-chain and cannot be manipulated.</p>
         </div>
 
-        <Link href="/" className="inline-block mt-8 px-5 py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition">
+        <Link href="/" className="inline-block mt-8 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-xl transition">
           Start Playing →
         </Link>
       </main>
