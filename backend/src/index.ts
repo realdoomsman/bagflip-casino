@@ -1,14 +1,31 @@
 import express from 'express'
 import { WebSocketServer } from 'ws'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, PublicKey, Keypair } from '@solana/web3.js'
 import { AnchorProvider, Program } from '@coral-xyz/anchor'
 import dotenv from 'dotenv'
+import crypto from 'crypto'
+import nacl from 'tweetnacl'
+import bs58 from 'bs58'
 import { VRFService } from './vrf'
 import { SettlementEngine } from './settlement'
 import { DatabaseService } from './database'
 import { PayoutService } from './payout'
 
 dotenv.config()
+
+// Simple password hashing (use bcrypt in production)
+const hashPassword = (password: string): string => {
+  return crypto.createHash('sha256').update(password + process.env.PASSWORD_SALT || 'bagflip_salt').digest('hex')
+}
+
+const generateToken = (): string => {
+  return crypto.randomBytes(32).toString('hex')
+}
+
+const generateDepositAddress = (): string => {
+  const keypair = Keypair.generate()
+  return keypair.publicKey.toBase58()
+}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -185,6 +202,370 @@ const markGameProcessed = (gameId: string): void => {
     processedGames.delete(gameId)
   }, GAME_ID_EXPIRY)
 }
+
+// Auth middleware
+const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' })
+  }
+  
+  const user = db.getUserBySessionToken(token)
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
+  
+  (req as any).user = user
+  next()
+}
+
+// ==================== AUTH ROUTES ====================
+
+// Register with username/password
+app.post('/api/auth/register', rateLimit(5, 60000), async (req, res) => {
+  const { username, email, password } = sanitizeInput(req.body)
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' })
+  }
+  
+  if (username.length < 3 || username.length > 20) {
+    return res.status(400).json({ error: 'Username must be 3-20 characters' })
+  }
+  
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' })
+  }
+  
+  const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  const depositAddress = generateDepositAddress()
+  
+  const user = db.createUserAccount({
+    id: userId,
+    username,
+    email: email || undefined,
+    passwordHash: hashPassword(password),
+    depositAddress
+  })
+  
+  if (!user) {
+    return res.status(400).json({ error: 'Username or email already taken' })
+  }
+  
+  const token = generateToken()
+  db.updateSessionToken(userId, token)
+  
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      balance: user.balance,
+      depositAddress: user.deposit_address
+    }
+  })
+})
+
+// Login with username/password
+app.post('/api/auth/login', rateLimit(10, 60000), async (req, res) => {
+  const { username, password } = sanitizeInput(req.body)
+  
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' })
+  }
+  
+  const user = db.getUserByUsername(username)
+  if (!user || user.password_hash !== hashPassword(password)) {
+    return res.status(401).json({ error: 'Invalid credentials' })
+  }
+  
+  const token = generateToken()
+  db.updateSessionToken(user.id, token)
+  
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      balance: user.balance,
+      depositAddress: user.deposit_address
+    }
+  })
+})
+
+// Login/Register with wallet signature
+app.post('/api/auth/wallet', rateLimit(10, 60000), async (req, res) => {
+  const { walletAddress, signature, message } = sanitizeInput(req.body)
+  
+  if (!walletAddress || !signature || !message) {
+    return res.status(400).json({ error: 'Wallet address, signature, and message required' })
+  }
+  
+  // Verify signature
+  try {
+    const publicKey = new PublicKey(walletAddress)
+    const messageBytes = new TextEncoder().encode(message)
+    const signatureBytes = bs58.decode(signature)
+    
+    const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKey.toBytes())
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid signature' })
+    }
+  } catch (error) {
+    return res.status(401).json({ error: 'Signature verification failed' })
+  }
+  
+  // Check if user exists
+  let user = db.getUserByWallet(walletAddress)
+  
+  if (!user) {
+    // Create new account
+    const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const username = `user_${walletAddress.slice(0, 8)}`
+    const depositAddress = generateDepositAddress()
+    
+    user = db.createUserAccount({
+      id: userId,
+      username,
+      walletAddress,
+      depositAddress
+    })
+    
+    if (!user) {
+      return res.status(500).json({ error: 'Failed to create account' })
+    }
+  }
+  
+  const token = generateToken()
+  db.updateSessionToken(user.id, token)
+  
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      balance: user.balance,
+      depositAddress: user.deposit_address,
+      walletAddress: user.wallet_address
+    }
+  })
+})
+
+// Logout
+app.post('/api/auth/logout', authMiddleware, async (req, res) => {
+  const user = (req as any).user
+  db.clearSessionToken(user.id)
+  res.json({ success: true })
+})
+
+// Get current user
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  const user = (req as any).user
+  res.json({
+    id: user.id,
+    username: user.username,
+    balance: user.balance,
+    depositAddress: user.deposit_address,
+    walletAddress: user.wallet_address,
+    totalDeposited: user.total_deposited,
+    totalWithdrawn: user.total_withdrawn
+  })
+})
+
+// ==================== BALANCE ROUTES ====================
+
+// Get deposit address
+app.get('/api/balance/deposit-address', authMiddleware, async (req, res) => {
+  const user = (req as any).user
+  res.json({ depositAddress: user.deposit_address })
+})
+
+// Request withdrawal
+app.post('/api/balance/withdraw', authMiddleware, rateLimit(3, 60000), async (req, res) => {
+  const user = (req as any).user
+  const { amount, destinationAddress } = sanitizeInput(req.body)
+  
+  if (!amount || !destinationAddress) {
+    return res.status(400).json({ error: 'Amount and destination address required' })
+  }
+  
+  if (amount < 1000) {
+    return res.status(400).json({ error: 'Minimum withdrawal is 1000 $BAG' })
+  }
+  
+  if (amount > user.balance) {
+    return res.status(400).json({ error: 'Insufficient balance' })
+  }
+  
+  // Validate destination address
+  try {
+    new PublicKey(destinationAddress)
+  } catch {
+    return res.status(400).json({ error: 'Invalid destination address' })
+  }
+  
+  const withdrawalId = `wd_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  
+  const success = db.createWithdrawal({
+    id: withdrawalId,
+    userId: user.id,
+    amount,
+    destinationAddress
+  })
+  
+  if (!success) {
+    return res.status(400).json({ error: 'Withdrawal failed' })
+  }
+  
+  // Process withdrawal async (in production, use a queue)
+  processWithdrawal(withdrawalId)
+  
+  res.json({ success: true, withdrawalId })
+})
+
+// Get transaction history
+app.get('/api/balance/history', authMiddleware, async (req, res) => {
+  const user = (req as any).user
+  const deposits = db.getUserDeposits(user.id)
+  const withdrawals = db.getUserWithdrawals(user.id)
+  
+  res.json({ deposits, withdrawals })
+})
+
+// Process withdrawal (called async)
+async function processWithdrawal(withdrawalId: string) {
+  const withdrawals = db.getPendingWithdrawals()
+  const withdrawal = withdrawals.find(w => w.id === withdrawalId)
+  
+  if (!withdrawal) return
+  
+  try {
+    // Convert to SOL (assuming $BAG is 1:1 with lamports for now)
+    const amountSol = withdrawal.amount / 1e9
+    const txSignature = await payoutService.sendPayout(withdrawal.destination_address, amountSol)
+    
+    if (txSignature) {
+      db.confirmWithdrawal(withdrawalId, txSignature)
+      console.log(`[WITHDRAWAL] Completed: ${withdrawalId} - ${txSignature}`)
+    } else {
+      db.failWithdrawal(withdrawalId)
+      console.error(`[WITHDRAWAL] Failed: ${withdrawalId}`)
+    }
+  } catch (error) {
+    console.error(`[WITHDRAWAL] Error: ${withdrawalId}`, error)
+    db.failWithdrawal(withdrawalId)
+  }
+}
+
+// ==================== GAME ROUTES (Updated for account balance) ====================
+
+// Play game with account balance
+app.post('/api/game/play', authMiddleware, rateLimit(30, 60000), async (req, res) => {
+  const user = (req as any).user
+  const { gameType, wager, choice } = sanitizeInput(req.body)
+  
+  // Validate inputs
+  if (!gameType || !wager) {
+    return res.status(400).json({ error: 'Game type and wager required' })
+  }
+  
+  const validGameTypes = ['CoinFlip', 'DiceHighLow', 'EvenOdd']
+  if (!validGameTypes.includes(gameType)) {
+    return res.status(400).json({ error: 'Invalid game type' })
+  }
+  
+  const MIN_WAGER = 100
+  const MAX_WAGER = 10_000_000
+  
+  if (wager < MIN_WAGER || wager > MAX_WAGER) {
+    return res.status(400).json({ error: `Wager must be between ${MIN_WAGER} and ${MAX_WAGER}` })
+  }
+  
+  if (wager > user.balance) {
+    return res.status(400).json({ error: 'Insufficient balance' })
+  }
+  
+  // Deduct wager from balance
+  db.updateUserBalance(user.id, -wager)
+  
+  const gameId = `game_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  
+  try {
+    // Generate random result
+    const vrfResult = await vrfService.requestRandomness(
+      new PublicKey('11111111111111111111111111111111'),
+      gameType
+    )
+    
+    const resultByte = vrfResult[0]
+    let won = false
+    let resultValue = 0
+    
+    if (gameType === 'CoinFlip') {
+      resultValue = resultByte % 2
+      won = (choice === 'heads' && resultValue === 1) || (choice === 'tails' && resultValue === 0)
+    } else if (gameType === 'DiceHighLow') {
+      resultValue = (resultByte % 100) + 1
+      won = (choice === 'high' && resultValue > 50) || (choice === 'low' && resultValue <= 50)
+    } else if (gameType === 'EvenOdd') {
+      resultValue = (resultByte % 100) + 1
+      won = (choice === 'even' && resultValue % 2 === 0) || (choice === 'odd' && resultValue % 2 === 1)
+    }
+    
+    // Update balance based on result
+    if (won) {
+      db.updateUserBalance(user.id, wager * 2) // Return wager + winnings
+    }
+    
+    // Update stats
+    db.updateUserStats(user.id, won, wager)
+    db.updateTreasuryStats(won, wager)
+    
+    // Add to live feed
+    db.addLiveFeedEvent({
+      id: gameId,
+      player: user.username,
+      game_type: gameType,
+      wager,
+      won,
+      timestamp: Date.now()
+    })
+    
+    // Broadcast to websocket
+    broadcast({
+      type: 'game_result',
+      event: {
+        id: gameId,
+        player: user.username,
+        game: gameType,
+        wager,
+        won,
+        result: resultValue,
+        timestamp: Date.now()
+      }
+    })
+    
+    // Get updated balance
+    const updatedUser = db.getUserById(user.id)
+    
+    res.json({
+      success: true,
+      gameId,
+      won,
+      result: resultValue,
+      payout: won ? wager * 2 : 0,
+      newBalance: updatedUser?.balance || 0
+    })
+  } catch (error) {
+    // Refund on error
+    db.updateUserBalance(user.id, wager)
+    console.error('Game error:', error)
+    res.status(500).json({ error: 'Game failed, wager refunded' })
+  }
+})
 
 // API Routes
 app.get('/api/stats', async (req, res) => {

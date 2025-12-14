@@ -1,0 +1,63 @@
+<svg viewBox="0 0 1500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bannerBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0f18"/>
+      <stop offset="50%" style="stop-color:#0f1623"/>
+      <stop offset="100%" style="stop-color:#151d2a"/>
+    </linearGradient>
+    <linearGradient id="bannerCoin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="25%" style="stop-color:#f7b32b"/>
+      <stop offset="50%" style="stop-color:#e5a320"/>
+      <stop offset="75%" style="stop-color:#c4891f"/>
+      <stop offset="100%" style="stop-color:#a06b15"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f7b32b"/>
+      <stop offset="100%" style="stop-color:#ffd700"/>
+    </linearGradient>
+    <filter id="bannerGlow">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="bannerShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#f7b32b" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1500" height="500" fill="url(#bannerBg)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="100" cy="250" r="300" fill="none" stroke="#f7b32b" stroke-width="1" opacity="0.05"/>
+  <circle cx="1400" cy="250" r="250" fill="none" stroke="#f7b32b" stroke-width="1" opacity="0.05"/>
+  
+  <!-- Left coin -->
+  <g transform="translate(200, 250)">
+    <circle r="100" fill="url(#bannerCoin)" stroke="#c4891f" stroke-width="6" filter="url(#bannerShadow)"/>
+    <circle r="80" fill="none" stroke="#c4891f" stroke-width="3" opacity="0.5"/>
+    <circle r="60" fill="none" stroke="#c4891f" stroke-width="2" opacity="0.3"/>
+    <text y="25" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="80" font-weight="900" fill="#c4891f" opacity="0.6">B</text>
+    <ellipse cx="-30" cy="-40" rx="35" ry="20" fill="rgba(255,255,255,0.3)" transform="rotate(-30 -30 -40)"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="750" y="220" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="120" font-weight="900" fill="url(#textGrad)" filter="url(#bannerGlow)">BAGFLIP</text>
+  <text x="750" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" fill="#8a9bb8">DOUBLE OR NOTHING</text>
+  <text x="750" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#4a5568">Flip your $BAG supply on Solana</text>
+  
+  <!-- Right coin (flipping) -->
+  <g transform="translate(1300, 250) rotate(15)">
+    <circle r="80" fill="url(#bannerCoin)" stroke="#c4891f" stroke-width="5" filter="url(#bannerShadow)"/>
+    <circle r="65" fill="none" stroke="#c4891f" stroke-width="2" opacity="0.5"/>
+    <text y="20" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="60" font-weight="900" fill="#c4891f" opacity="0.6">B</text>
+  </g>
+  
+  <!-- Small decorative coins -->
+  <circle cx="450" cy="400" r="25" fill="url(#bannerCoin)" opacity="0.3"/>
+  <circle cx="1050" cy="100" r="20" fill="url(#bannerCoin)" opacity="0.2"/>
+  <circle cx="550" cy="80" r="15" fill="url(#bannerCoin)" opacity="0.15"/>
+</svg>

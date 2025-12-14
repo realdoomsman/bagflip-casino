@@ -2,45 +2,228 @@
 @tailwind components;
 @tailwind utilities;
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  background: #09090b;
-  color: #fafafa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0e17;
+  color: #fff;
+  font-family: 'Inter', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #09090b; }
-::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2a3a;
+  border-radius: 2px;
+}
 
+/* Wallet Button */
 .wallet-adapter-button {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
-  color: #fff !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
-  padding: 0 20px !important;
-  height: 42px !important;
-  border-radius: 10px !important;
+  background: #f7b32b !important;
+  color: #000 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 0 16px !important;
+  height: 38px !important;
+  border-radius: 8px !important;
   border: none !important;
+  transition: all 0.15s !important;
 }
-.wallet-adapter-button:hover { 
-  opacity: 0.9 !important;
-}
-
-.gradient-border {
-  background: linear-gradient(#18181b, #18181b) padding-box,
-              linear-gradient(135deg, #8b5cf6, #6366f1, #8b5cf6) border-box;
-  border: 1px solid transparent;
+.wallet-adapter-button:hover {
+  background: #e5a320 !important;
 }
 
-.glow-purple {
-  box-shadow: 0 0 60px rgba(139, 92, 246, 0.15);
+/* Buttons */
+.btn-primary {
+  background: #f7b32b;
+  color: #000;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s;
+}
+.btn-primary:hover {
+  background: #e5a320;
+}
+.btn-primary:disabled {
+  background: #1e2a3a;
+  color: #4a5568;
 }
 
-.text-gradient {
-  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.btn-outline {
+  background: transparent;
+  color: #8a9bb8;
+  border: 1px solid #1e2a3a;
+  border-radius: 10px;
+  transition: all 0.15s;
+}
+.btn-outline:hover {
+  border-color: #2a3a4a;
+  color: #fff;
+}
+.btn-outline.active {
+  background: rgba(247, 179, 43, 0.08);
+  border-color: #f7b32b;
+  color: #f7b32b;
+}
+
+/* Card */
+.card {
+  background: #0d1219;
+  border: 1px solid #151d2a;
+  border-radius: 14px;
+}
+
+/* Navigation */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #5a6a7a;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #8a9bb8;
+}
+.nav-item.active {
+  background: rgba(247, 179, 43, 0.08);
+  color: #f7b32b;
+}
+
+/* Gold Coin */
+.gold-coin {
+  position: relative;
+  background: conic-gradient(
+    from 0deg,
+    #ffd700,
+    #f7b32b,
+    #e5a320,
+    #c4891f,
+    #e5a320,
+    #f7b32b,
+    #ffd700
+  );
+  box-shadow:
+    inset 0 0 30px rgba(255, 255, 255, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 60px rgba(247, 179, 43, 0.15);
+  border: 3px solid #c4891f;
+}
+
+.gold-coin::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #ffd700,
+    #f7b32b,
+    #e5a320,
+    #c4891f,
+    #e5a320,
+    #f7b32b,
+    #ffd700
+  );
+  border: 2px solid rgba(196, 137, 31, 0.4);
+}
+
+.gold-coin::after {
+  content: '';
+  position: absolute;
+  top: 12%;
+  left: 12%;
+  right: 12%;
+  bottom: 12%;
+  border-radius: 50%;
+  border: 2px solid rgba(196, 137, 31, 0.3);
+  background: radial-gradient(
+    ellipse at 30% 25%,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 50%
+  );
+}
+
+.coin-shine {
+  position: absolute;
+  top: 6%;
+  left: 15%;
+  width: 35%;
+  height: 25%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  transform: rotate(-25deg);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.glow-gold {
+  box-shadow: 0 0 50px rgba(247, 179, 43, 0.12);
+}
+
+/* Flip Badges */
+.flip-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.flip-badge.heads {
+  background: #f7b32b;
+  color: #000;
+}
+.flip-badge.tails {
+  background: #e8614d;
+  color: #fff;
+}
+.flip-badge.high {
+  background: #22c55e;
+  color: #fff;
+}
+.flip-badge.low {
+  background: #ef4444;
+  color: #fff;
+}
+.flip-badge.even {
+  background: #3b82f6;
+  color: #fff;
+}
+.flip-badge.odd {
+  background: #a855f7;
+  color: #fff;
+}
+
+/* Input */
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

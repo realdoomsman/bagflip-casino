@@ -1,105 +1,230 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useFlipCasino } from '@/hooks/useFlipCasino'
-import { useWalletBalance } from '@/hooks/useWalletBalance'
+import { useAuth } from '@/lib/auth'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://bagflip-casino-production.up.railway.app'
 
 export default function DiceGame() {
-  const { connected } = useWallet()
-  const { setVisible } = useWalletModal()
+  const { user, token, refreshUser } = useAuth()
   const [choice, setChoice] = useState<'low' | 'high' | null>(null)
   const [wager, setWager] = useState('')
   const [isRolling, setIsRolling] = useState(false)
   const [displayNum, setDisplayNum] = useState(50)
-  const [result, setResult] = useState<{ number: number; won: boolean } | null>(null)
-  const balance = useWalletBalance()
-  const { playDiceGame, loading } = useFlipCasino()
+  const [result, setResult] = useState<{
+    number: number
+    won: boolean
+    amount: number
+  } | null>(null)
 
   useEffect(() => {
     if (isRolling) {
-      const i = setInterval(() => setDisplayNum(Math.floor(Math.random() * 100) + 1), 50)
+      const i = setInterval(
+        () => setDisplayNum(Math.floor(Math.random() * 100) + 1),
+        50
+      )
       return () => clearInterval(i)
     }
   }, [isRolling])
 
   const handlePlay = async () => {
-    if (!connected) { setVisible(true); return }
-    if (!choice || !wager) return
-    const amt = parseFloat(wager)
-    if (isNaN(amt) || amt <= 0 || isRolling || loading) return
+    if (!user || !token || !choice || !wager) return
+    const amt = parseInt(wager)
+    if (isNaN(amt) || amt <= 0 || amt > user.balance || isRolling) return
+
     setIsRolling(true)
     setResult(null)
+
     try {
-      const { vrfResult } = await playDiceGame(amt, choice)
-      await new Promise(r => setTimeout(r, 1500))
-      const roll = (vrfResult.value % 100) + 1
-      setDisplayNum(roll)
-      setResult({ number: roll, won: vrfResult.won })
-    } catch (e: any) {
-      alert(e?.message || 'Transaction failed')
+      const res = await fetch(`${API_URL}/api/game/play`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          gameType: 'DiceHighLow',
+          wager: amt,
+          choice,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        await new Promise((r) => setTimeout(r, 1800))
+        setDisplayNum(data.result)
+        setResult({ number: data.result, won: data.won, amount: amt })
+        refreshUser()
+      } else {
+        alert(data.error || 'Game failed')
+      }
+    } catch (error) {
+      console.error('Game error:', error)
+      alert('Something went wrong')
     } finally {
       setIsRolling(false)
     }
   }
 
-  const reset = () => { setResult(null); setChoice(null) }
+  const reset = () => {
+    setResult(null)
+    setChoice(null)
+    setWager('')
+  }
+
+  const presetAmounts = [100, 500, 1000, 5000, 10000, 50000]
 
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-6 glow-purple">
-      {!isRolling && !result && (
-        <>
-          <div className="mb-6">
-            <label className="block text-sm text-white/50 mb-3">Pick a range</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setChoice('low')} className={`p-5 rounded-xl border-2 transition-all ${choice === 'low' ? 'border-violet-500 bg-violet-500/10 shadow-lg shadow-violet-500/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}>
-                <div className="text-3xl font-black text-white mb-1">1-50</div>
-                <div className="text-sm text-white/50">Low</div>
-              </button>
-              <button onClick={() => setChoice('high')} className={`p-5 rounded-xl border-2 transition-all ${choice === 'high' ? 'border-violet-500 bg-violet-500/10 shadow-lg shadow-violet-500/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}>
-                <div className="text-3xl font-black text-white mb-1">51-100</div>
-                <div className="text-sm text-white/50">High</div>
-              </button>
-            </div>
-          </div>
-          <div className="mb-6">
-            <label className="block text-sm text-white/50 mb-3">Bet amount (SOL)</label>
-            <input type="number" value={wager} onChange={(e) => setWager(e.target.value)} placeholder="0.00"
-              className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-xl px-4 text-white text-xl font-semibold focus:outline-none focus:border-violet-500 transition" />
-            <div className="flex gap-2 mt-3">
-              {[0.1, 0.5, 1, 5].map((a) => (
-                <button key={a} onClick={() => setWager(a.toString())} className="flex-1 py-2.5 text-sm text-white/50 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 rounded-lg transition">{a}</button>
-              ))}
-            </div>
-            {connected && <div className="text-xs text-white/30 mt-3">Balance: {balance.toFixed(4)} SOL</div>}
-          </div>
-        </>
-      )}
-
-      <div className="min-h-[180px] flex items-center justify-center">
+    <div className="w-full max-w-sm">
+      {/* Dice Display */}
+      <div className="flex justify-center mb-8">
         <AnimatePresence mode="wait">
           {isRolling ? (
-            <motion.div key="roll" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-              <motion.div className="text-7xl font-black text-violet-400" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.1, repeat: Infinity }}>{displayNum}</motion.div>
-              <div className="text-white/40 mt-4">Rolling...</div>
+            <motion.div
+              key="rolling"
+              className="w-32 h-32 rounded-xl bg-[#0d1219] border-2 border-[#f7b32b] flex items-center justify-center"
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 0.08, repeat: Infinity }}
+            >
+              <span className="text-[#f7b32b] text-4xl font-bold tabular-nums">
+                {displayNum}
+              </span>
             </motion.div>
           ) : result ? (
-            <motion.div key="result" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-              <div className={`text-7xl font-black ${result.won ? 'text-green-400' : 'text-red-400'}`}>{result.number}</div>
-              <div className={`text-3xl font-bold mt-3 ${result.won ? 'text-green-400' : 'text-red-400'}`}>{result.won ? 'You Won!' : 'You Lost'}</div>
-              <button onClick={reset} className="mt-5 px-5 py-2 text-sm text-violet-400 hover:bg-violet-500/10 rounded-lg transition">Play Again</button>
+            <motion.div
+              key="result"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className={`w-32 h-32 rounded-xl flex items-center justify-center border-2 ${
+                result.won
+                  ? 'bg-green-900/10 border-green-400/50'
+                  : 'bg-red-900/10 border-red-400/50'
+              }`}
+            >
+              <span
+                className={`text-4xl font-bold ${result.won ? 'text-green-400' : 'text-red-400'}`}
+              >
+                {result.number}
+              </span>
             </motion.div>
-          ) : null}
+          ) : (
+            <div className="w-32 h-32 rounded-xl bg-[#0d1219] border border-[#1e2a3a] flex items-center justify-center">
+              <span className="text-[#3a4556] text-4xl font-bold">?</span>
+            </div>
+          )}
         </AnimatePresence>
       </div>
 
-      {!result && (
-        <button onClick={handlePlay} disabled={!choice || !wager || isRolling || loading}
-          className="w-full h-14 bg-gradient-to-r from-violet-500 to-indigo-500 hover:opacity-90 disabled:from-white/5 disabled:to-white/5 disabled:text-white/30 text-white font-semibold text-lg rounded-xl transition shadow-lg shadow-violet-500/20 disabled:shadow-none">
-          {!connected ? 'Connect Wallet' : isRolling ? 'Rolling...' : 'Roll Dice'}
-        </button>
+      {/* Status */}
+      {isRolling && (
+        <div className="text-center mb-6">
+          <p className="text-white font-medium mb-1">Rolling...</p>
+          <p className="text-[#f7b32b] text-sm">
+            {choice?.toUpperCase()} for {Number(wager).toLocaleString()} $BAG
+          </p>
+        </div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div className="text-center mb-6">
+          <p
+            className={`text-2xl font-bold mb-1 ${result.won ? 'text-green-400' : 'text-red-400'}`}
+          >
+            {result.won ? 'You Won!' : 'Rekt'}
+          </p>
+          <p
+            className={`text-lg font-semibold ${result.won ? 'text-green-400' : 'text-red-400'}`}
+          >
+            {result.won
+              ? `+${(result.amount * 2).toLocaleString()}`
+              : `-${result.amount.toLocaleString()}`}{' '}
+            $BAG
+          </p>
+          <button onClick={reset} className="btn-primary px-6 py-2.5 mt-5">
+            Roll Again
+          </button>
+        </div>
+      )}
+
+      {/* Controls */}
+      {!isRolling && !result && (
+        <div className="card p-5">
+          {!user ? (
+            <div className="text-center py-4">
+              <p className="text-[#5a6a7a] text-sm mb-3">
+                Sign in to start playing
+              </p>
+              <p className="text-[#3a4556] text-xs">
+                Create an account, deposit $BAG, and roll!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-5">
+                <label className="text-xs text-[#5a6a7a] mb-2 block uppercase tracking-wider">
+                  Pick range
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setChoice('low')}
+                    className={`btn-outline py-3 font-medium ${choice === 'low' ? 'active' : ''}`}
+                  >
+                    <div>1-50</div>
+                    <div className="text-[10px] text-[#5a6a7a] mt-0.5">Low</div>
+                  </button>
+                  <button
+                    onClick={() => setChoice('high')}
+                    className={`btn-outline py-3 font-medium ${choice === 'high' ? 'active' : ''}`}
+                  >
+                    <div>51-100</div>
+                    <div className="text-[10px] text-[#5a6a7a] mt-0.5">High</div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="text-xs text-[#5a6a7a] mb-2 block uppercase tracking-wider">
+                  Amount
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                  {presetAmounts.map((amt) => (
+                    <button
+                      key={amt}
+                      onClick={() => setWager(amt.toString())}
+                      className={`btn-outline py-2 text-xs ${wager === amt.toString() ? 'active' : ''}`}
+                    >
+                      {amt >= 1000 ? `${amt / 1000}k` : amt}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={wager}
+                    onChange={(e) => setWager(e.target.value)}
+                    placeholder="Custom"
+                    className="flex-1 h-10 bg-[#080c14] border border-[#1e2a3a] rounded-lg px-3 text-white text-sm focus:outline-none focus:border-[#f7b32b] transition"
+                  />
+                  <span className="text-[#5a6a7a] text-sm">$BAG</span>
+                </div>
+                <p className="text-[10px] text-[#3a4556] mt-1.5">
+                  Balance: {user.balance.toLocaleString()} $BAG
+                </p>
+              </div>
+
+              <button
+                onClick={handlePlay}
+                disabled={!choice || !wager || parseInt(wager) > user.balance}
+                className="btn-primary w-full py-3 text-sm"
+              >
+                Double or Nothing
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   )

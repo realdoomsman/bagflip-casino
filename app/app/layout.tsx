@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { WalletProvider } from '@/components/WalletProvider'
+import { AuthProvider } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: 'BagFlip Casino | bagflip.xyz',
@@ -15,9 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-white">
-        <WalletProvider>
+        <AuthProvider>
           {children}
-        </WalletProvider>
+        </AuthProvider>
       </body>
     </html>
   )

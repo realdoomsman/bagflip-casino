@@ -1,0 +1,48 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1623"/>
+      <stop offset="100%" style="stop-color:#1a2235"/>
+    </linearGradient>
+    <linearGradient id="coinGradPfp" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="25%" style="stop-color:#f7b32b"/>
+      <stop offset="50%" style="stop-color:#e5a320"/>
+      <stop offset="75%" style="stop-color:#c4891f"/>
+      <stop offset="100%" style="stop-color:#a06b15"/>
+    </linearGradient>
+    <linearGradient id="shinePfp" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadowPfp" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#f7b32b" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGrad)"/>
+  
+  <!-- Glow ring -->
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#f7b32b" stroke-width="2" opacity="0.2" filter="url(#glow)"/>
+  
+  <!-- Main coin -->
+  <circle cx="200" cy="200" r="120" fill="url(#coinGradPfp)" stroke="#c4891f" stroke-width="8" filter="url(#shadowPfp)"/>
+  
+  <!-- Inner rings -->
+  <circle cx="200" cy="200" r="100" fill="none" stroke="#c4891f" stroke-width="4" opacity="0.5"/>
+  <circle cx="200" cy="200" r="80" fill="none" stroke="#c4891f" stroke-width="2" opacity="0.3"/>
+  
+  <!-- B letter -->
+  <text x="200" y="235" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="120" font-weight="900" fill="#c4891f" opacity="0.6">B</text>
+  
+  <!-- Shine -->
+  <ellipse cx="150" cy="140" rx="50" ry="30" fill="url(#shinePfp)" transform="rotate(-30 150 140)"/>
+</svg>

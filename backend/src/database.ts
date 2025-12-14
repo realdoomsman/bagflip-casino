@@ -39,6 +39,20 @@ export interface UserStats {
   biggest_loss: number
 }
 
+export interface UserAccount {
+  id: string
+  username: string
+  email: string | null
+  password_hash: string | null
+  wallet_address: string | null
+  balance: number
+  deposit_address: string
+  total_deposited: number
+  total_withdrawn: number
+  created_at: number
+  last_login: number
+}
+
 export interface TreasuryStats {
   id: number
   treasury_balance: number
@@ -157,6 +171,53 @@ export class DatabaseService {
       )
     `)
 
+    // User Accounts table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS user_accounts (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE,
+        password_hash TEXT,
+        wallet_address TEXT UNIQUE,
+        balance INTEGER DEFAULT 0,
+        deposit_address TEXT UNIQUE NOT NULL,
+        total_deposited INTEGER DEFAULT 0,
+        total_withdrawn INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        last_login INTEGER,
+        session_token TEXT
+      )
+    `)
+
+    // Deposit transactions table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS deposits (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        tx_signature TEXT UNIQUE NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at INTEGER NOT NULL,
+        confirmed_at INTEGER,
+        FOREIGN KEY (user_id) REFERENCES user_accounts(id)
+      )
+    `)
+
+    // Withdrawal requests table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS withdrawals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        destination_address TEXT NOT NULL,
+        tx_signature TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at INTEGER NOT NULL,
+        processed_at INTEGER,
+        FOREIGN KEY (user_id) REFERENCES user_accounts(id)
+      )
+    `)
+
     // Create indexes
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_games_player ON games(player);
@@ -165,6 +226,10 @@ export class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_pvp_rooms_expires ON pvp_rooms(expires_at);
       CREATE INDEX IF NOT EXISTS idx_live_feed_timestamp ON live_feed_events(timestamp DESC);
       CREATE INDEX IF NOT EXISTS idx_leaderboard_rank ON leaderboard_cache(rank);
+      CREATE INDEX IF NOT EXISTS idx_user_accounts_username ON user_accounts(username);
+      CREATE INDEX IF NOT EXISTS idx_user_accounts_email ON user_accounts(email);
+      CREATE INDEX IF NOT EXISTS idx_deposits_user ON deposits(user_id);
+      CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
     `)
 
     // Initialize treasury stats if not exists
@@ -376,6 +441,146 @@ export class DatabaseService {
       ORDER BY rank ASC
       LIMIT ?
     `).all(limit)
+  }
+
+  // ==================== USER ACCOUNTS ====================
+
+  createUserAccount(user: {
+    id: string
+    username: string
+    email?: string
+    passwordHash?: string
+    walletAddress?: string
+    depositAddress: string
+  }): UserAccount | null {
+    try {
+      this.db.prepare(`
+        INSERT INTO user_accounts (id, username, email, password_hash, wallet_address, deposit_address, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(user.id, user.username, user.email || null, user.passwordHash || null, user.walletAddress || null, user.depositAddress, Date.now())
+      
+      return this.getUserById(user.id)
+    } catch (error: any) {
+      if (error.message?.includes('UNIQUE constraint')) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  getUserById(userId: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE id = ?').get(userId) as UserAccount | undefined
+  }
+
+  getUserByUsername(username: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE username = ?').get(username) as UserAccount | undefined
+  }
+
+  getUserByEmail(email: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE email = ?').get(email) as UserAccount | undefined
+  }
+
+  getUserByWallet(walletAddress: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE wallet_address = ?').get(walletAddress) as UserAccount | undefined
+  }
+
+  getUserByDepositAddress(depositAddress: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE deposit_address = ?').get(depositAddress) as UserAccount | undefined
+  }
+
+  getUserBySessionToken(token: string): UserAccount | undefined {
+    return this.db.prepare('SELECT * FROM user_accounts WHERE session_token = ?').get(token) as UserAccount | undefined
+  }
+
+  updateSessionToken(userId: string, token: string): void {
+    this.db.prepare('UPDATE user_accounts SET session_token = ?, last_login = ? WHERE id = ?').run(token, Date.now(), userId)
+  }
+
+  clearSessionToken(userId: string): void {
+    this.db.prepare('UPDATE user_accounts SET session_token = NULL WHERE id = ?').run(userId)
+  }
+
+  updateUserBalance(userId: string, amount: number): boolean {
+    const user = this.getUserById(userId)
+    if (!user) return false
+    
+    const newBalance = user.balance + amount
+    if (newBalance < 0) return false
+    
+    this.db.prepare('UPDATE user_accounts SET balance = ? WHERE id = ?').run(newBalance, userId)
+    return true
+  }
+
+  setUserBalance(userId: string, balance: number): void {
+    this.db.prepare('UPDATE user_accounts SET balance = ? WHERE id = ?').run(balance, userId)
+  }
+
+  // Deposit tracking
+  createDeposit(deposit: { id: string; userId: string; amount: number; txSignature: string }): void {
+    this.db.prepare(`
+      INSERT INTO deposits (id, user_id, amount, tx_signature, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(deposit.id, deposit.userId, deposit.amount, deposit.txSignature, Date.now())
+  }
+
+  confirmDeposit(depositId: string): void {
+    const deposit = this.db.prepare('SELECT * FROM deposits WHERE id = ?').get(depositId) as any
+    if (!deposit) return
+    
+    this.db.prepare('UPDATE deposits SET status = ?, confirmed_at = ? WHERE id = ?').run('confirmed', Date.now(), depositId)
+    this.updateUserBalance(deposit.user_id, deposit.amount)
+    this.db.prepare('UPDATE user_accounts SET total_deposited = total_deposited + ? WHERE id = ?').run(deposit.amount, deposit.user_id)
+  }
+
+  getDepositByTx(txSignature: string): any {
+    return this.db.prepare('SELECT * FROM deposits WHERE tx_signature = ?').get(txSignature)
+  }
+
+  getUserDeposits(userId: string): any[] {
+    return this.db.prepare('SELECT * FROM deposits WHERE user_id = ? ORDER BY created_at DESC').all(userId)
+  }
+
+  // Withdrawal tracking
+  createWithdrawal(withdrawal: { id: string; userId: string; amount: number; destinationAddress: string }): boolean {
+    const user = this.getUserById(withdrawal.userId)
+    if (!user || user.balance < withdrawal.amount) return false
+    
+    // Deduct balance immediately
+    this.updateUserBalance(withdrawal.userId, -withdrawal.amount)
+    
+    this.db.prepare(`
+      INSERT INTO withdrawals (id, user_id, amount, destination_address, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(withdrawal.id, withdrawal.userId, withdrawal.amount, withdrawal.destinationAddress, Date.now())
+    
+    return true
+  }
+
+  confirmWithdrawal(withdrawalId: string, txSignature: string): void {
+    const withdrawal = this.db.prepare('SELECT * FROM withdrawals WHERE id = ?').get(withdrawalId) as any
+    if (!withdrawal) return
+    
+    this.db.prepare('UPDATE withdrawals SET status = ?, tx_signature = ?, processed_at = ? WHERE id = ?')
+      .run('completed', txSignature, Date.now(), withdrawalId)
+    this.db.prepare('UPDATE user_accounts SET total_withdrawn = total_withdrawn + ? WHERE id = ?')
+      .run(withdrawal.amount, withdrawal.user_id)
+  }
+
+  failWithdrawal(withdrawalId: string): void {
+    const withdrawal = this.db.prepare('SELECT * FROM withdrawals WHERE id = ?').get(withdrawalId) as any
+    if (!withdrawal) return
+    
+    // Refund balance
+    this.updateUserBalance(withdrawal.user_id, withdrawal.amount)
+    this.db.prepare('UPDATE withdrawals SET status = ? WHERE id = ?').run('failed', withdrawalId)
+  }
+
+  getPendingWithdrawals(): any[] {
+    return this.db.prepare('SELECT * FROM withdrawals WHERE status = ? ORDER BY created_at ASC').all('pending')
+  }
+
+  getUserWithdrawals(userId: string): any[] {
+    return this.db.prepare('SELECT * FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC').all(userId)
   }
 
   // ==================== UTILITY ====================

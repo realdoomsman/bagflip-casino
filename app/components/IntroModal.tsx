@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
-// No props needed - component manages its own state
-const WelcomeModal = () => {
+export default function IntroModal() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -35,9 +35,10 @@ const WelcomeModal = () => {
           exit={{ scale: 0.9, opacity: 0 }}
           className="card p-8 max-w-lg w-full"
         >
+          {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-full gold-coin flex items-center justify-center">
-              <span className="text-[#0f1623] font-bold text-xl relative z-10">$BAG</span>
+            <div className="w-24 h-24 relative">
+              <Image src="/logo.svg" alt="BagFlip" fill className="object-contain" />
             </div>
           </div>
 
@@ -101,5 +102,3 @@ const WelcomeModal = () => {
     </AnimatePresence>
   )
 }
-
-export default WelcomeModal
