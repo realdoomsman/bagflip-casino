@@ -16,15 +16,31 @@ body {
 ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
 
 .wallet-adapter-button {
-  background: #18181b !important;
-  border: 1px solid #27272a !important;
-  color: #fafafa !important;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+  color: #fff !important;
   font-weight: 500 !important;
   font-size: 14px !important;
-  padding: 0 16px !important;
-  height: 40px !important;
-  border-radius: 8px !important;
+  padding: 0 20px !important;
+  height: 42px !important;
+  border-radius: 10px !important;
+  border: none !important;
 }
 .wallet-adapter-button:hover { 
-  background: #27272a !important; 
+  opacity: 0.9 !important;
+}
+
+.gradient-border {
+  background: linear-gradient(#18181b, #18181b) padding-box,
+              linear-gradient(135deg, #8b5cf6, #6366f1, #8b5cf6) border-box;
+  border: 1px solid transparent;
+}
+
+.glow-purple {
+  box-shadow: 0 0 60px rgba(139, 92, 246, 0.15);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
