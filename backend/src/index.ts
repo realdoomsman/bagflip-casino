@@ -33,27 +33,31 @@ const PORT = process.env.PORT || 3001
 app.use(express.json({ limit: '10kb' }))
 
 // Security: CORS with specific origin in production
+const allowedDomains = [
+  'http://localhost:3000',
+  'https://bagflip.xyz',
+  'https://www.bagflip.xyz',
+  'https://bagflip-casino-production.up.railway.app'
+]
+
 app.use((req, res, next) => {
   const origin = req.headers.origin
-  
-  // Define your allowed domains explicitly
-  const allowedDomains = [
-    'http://localhost:3000',
-    'https://bagflip.xyz',
-    'https://www.bagflip.xyz'
-  ]
   
   // Check if the origin matches ANY allowed domain
   if (origin && allowedDomains.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin)
+  } else if (origin) {
+    // Log unknown origins for debugging
+    console.log('[CORS] Blocked origin:', origin)
   }
   
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
   res.header('Access-Control-Allow-Credentials', 'true')
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200)
+    return res.status(200).end()
   }
   
   next()
