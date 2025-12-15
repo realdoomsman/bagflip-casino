@@ -34,15 +34,28 @@ app.use(express.json({ limit: '10kb' }))
 
 // Security: CORS with specific origin in production
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*']
   const origin = req.headers.origin
   
-  if (allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin))) {
-    res.header('Access-Control-Allow-Origin', origin || '*')
+  // Define your allowed domains explicitly
+  const allowedDomains = [
+    'http://localhost:3000',
+    'https://bagflip.xyz',
+    'https://www.bagflip.xyz'
+  ]
+  
+  // Check if the origin matches ANY allowed domain
+  if (origin && allowedDomains.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin)
   }
   
-  res.header('Access-Control-Allow-Headers', 'Content-Type')
-  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Credentials', 'true')
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+  
   next()
 })
 
@@ -600,18 +613,16 @@ app.post('/api/pvp/create', rateLimit(5, 60000), async (req, res) => {
   }
   
   // Validate wager
-  const MIN_WAGER = 1000
-  const MAX_WAGER = 1_000_000_000_000
+  const MIN_WAGER = 100
+  const MAX_WAGER = 10_000_000
   
   if (typeof wager !== 'number' || wager < MIN_WAGER || wager > MAX_WAGER) {
     return res.status(400).json({ error: 'Invalid wager amount' })
   }
   
-  // Validate creator address
-  try {
-    new PublicKey(creator)
-  } catch {
-    return res.status(400).json({ error: 'Invalid creator address' })
+  // Creator can be either a username or a wallet address - just validate it's a non-empty string
+  if (typeof creator !== 'string' || creator.length < 1) {
+    return res.status(400).json({ error: 'Invalid creator' })
   }
   
   const roomId = `room_${Date.now()}_${Math.random().toString(36).slice(2)}`
@@ -663,11 +674,9 @@ app.post('/api/pvp/join', rateLimit(10, 60000), async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' })
   }
   
-  // Validate opponent address
-  try {
-    new PublicKey(opponent)
-  } catch {
-    return res.status(400).json({ error: 'Invalid opponent address' })
+  // Opponent can be either a username or a wallet address - just validate it's a non-empty string
+  if (typeof opponent !== 'string' || opponent.length < 1) {
+    return res.status(400).json({ error: 'Invalid opponent' })
   }
   
   const room = pvpRooms.get(roomId)
