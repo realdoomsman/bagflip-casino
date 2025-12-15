@@ -29,39 +29,37 @@ const generateDepositAddress = (): string => {
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Security: Request size limit
-app.use(express.json({ limit: '10kb' }))
-
-// Security: CORS with specific origin in production
-const allowedDomains = [
-  'http://localhost:3000',
-  'https://bagflip.xyz',
-  'https://www.bagflip.xyz',
-  'https://bagflip-casino-production.up.railway.app'
-]
-
+// CORS - MUST be first middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin
   
-  // Check if the origin matches ANY allowed domain
-  if (origin && allowedDomains.includes(origin)) {
+  // Allow your specific domains OR localhost for testing
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://bagflip.xyz',
+    'https://www.bagflip.xyz'
+  ]
+  
+  // If the origin is in our list, allow it
+  if (origin && allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin)
-  } else if (origin) {
-    // Log unknown origins for debugging
-    console.log('[CORS] Blocked origin:', origin)
   }
   
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  // Always set these headers for preflight
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   res.header('Access-Control-Allow-Credentials', 'true')
   
-  // Handle preflight requests
+  // Handle preflight immediately (Stop processing here)
   if (req.method === 'OPTIONS') {
-    return res.status(200).end()
+    return res.sendStatus(200)
   }
   
   next()
 })
+
+// Security: Request size limit
+app.use(express.json({ limit: '10kb' }))
 
 // Security: Rate limiting per IP
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
